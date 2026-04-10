@@ -80,7 +80,7 @@ export default function AIVisionPanel({ scenario = 'normal', compact = false }: 
   const runAnalysis = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await CloudAIEngine.analyzeFrame(scenario);
+      const result = await CloudAIEngine.performFullZoneAnalysis(scenario);
       setAnalysis(result);
       setLastLatency(result.processingTimeMs);
       setCallCount(c => c + 1);

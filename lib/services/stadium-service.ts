@@ -8,7 +8,7 @@ import { GateManager } from '../gate-manager';
 import { CSK_MATCHES, type CSKMatch } from '../csk-matches';
 import { IPL_STADIUMS } from '../ipl-stadiums';
 import { calcDensityLevel, type DensityResult } from '../utils/crowd-math';
-import { findLeastCrowdedGate, type GateOption } from '../utils/route-optimizer';
+import { identifyOptimalEntryGate, type GateOption } from '../utils/route-optimizer';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -129,7 +129,7 @@ export function getMatchStadiumStatus(matchId: string, scenario = 'normal'): Sta
     isOpen: g.status !== 'closed',
   }));
 
-  const bestGate = findLeastCrowdedGate(gateOptions.filter(g => g.isEntryGate));
+  const bestGate = identifyOptimalEntryGate(gateOptions.filter(g => g.isEntryGate));
 
   return {
     matchId,

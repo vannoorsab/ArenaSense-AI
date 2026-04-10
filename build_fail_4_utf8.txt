@@ -1,0 +1,221 @@
+﻿----------------------------- REMOTE BUILD OUTPUT ------------------------------
+starting build "a5f334b1-33f7-432c-8cdc-09230fa54c26"
+
+FETCHSOURCE
+Fetching storage object: gs://ardent-bulwark-448011-i1_cloudbuild/source/1775851220.914265-0c94848d5c1f475d8e216bd7795e1739.tgz#1775851263731304
+Copying gs://ardent-bulwark-448011-i1_cloudbuild/source/1775851220.914265-0c94848d5c1f475d8e216bd7795e1739.tgz#1775851263731304...
+/ [0 files][    0.0 B/244.1 KiB]                                                
+/ [1 files][244.1 KiB/244.1 KiB]                                                
+
+Operation completed over 1 objects/244.1 KiB.                                    
+BUILD
+Already have image (with digest): gcr.io/cloud-builders/docker
+Sending build context to Docker daemon  1.285MB
+
+
+Step 1/28 : FROM node:20-slim AS base
+20-slim: Pulling from library/node
+da539b676105: Pulling fs layer
+1a78bbc25c7f: Pulling fs layer
+d654216581d8: Pulling fs layer
+9b97559caf99: Pulling fs layer
+c229a5665a77: Pulling fs layer
+c229a5665a77: Verifying Checksum
+c229a5665a77: Download complete
+1a78bbc25c7f: Verifying Checksum
+1a78bbc25c7f: Download complete
+9b97559caf99: Verifying Checksum
+9b97559caf99: Download complete
+da539b676105: Verifying Checksum
+da539b676105: Download complete
+d654216581d8: Verifying Checksum
+d654216581d8: Download complete
+da539b676105: Pull complete
+1a78bbc25c7f: Pull complete
+d654216581d8: Pull complete
+9b97559caf99: Pull complete
+c229a5665a77: Pull complete
+Digest: sha256:f93745c153377ee2fbbdd6e24efcd03cd2e86d6ab1d8aa9916a3790c40313a55
+Status: Downloaded newer image for node:20-slim
+ ---> 6d1685dbd5a2
+Step 2/28 : ENV PNPM_HOME="/pnpm"
+ ---> Running in abee31f64768
+Removing intermediate container abee31f64768
+ ---> d5a01013ce6e
+Step 3/28 : ENV PATH="$PNPM_HOME:$PATH"
+ ---> Running in 160dd8701949
+Removing intermediate container 160dd8701949
+ ---> e7d1a88b586d
+Step 4/28 : RUN npm install -g pnpm
+ ---> Running in b28ef1742759
+
+added 1 package in 1s
+
+1 package is looking for funding
+  run `npm fund` for details
+[91mnpm notice
+npm notice New major version of npm available! 10.8.2 -> 11.12.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+npm notice To update run: npm install -g npm@11.12.1
+npm notice
+[0mRemoving intermediate container b28ef1742759
+ ---> 026e4358dded
+Step 5/28 : FROM base AS deps
+ ---> 026e4358dded
+Step 6/28 : WORKDIR /app
+ ---> Running in 28de0f18f3f8
+Removing intermediate container 28de0f18f3f8
+ ---> 05bda1338c77
+Step 7/28 : COPY package.json pnpm-lock.yaml* ./
+ ---> 068f72c85803
+Step 8/28 : RUN pnpm install --no-frozen-lockfile
+ ---> Running in 9217cc3a3b91
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 48, reused 0, downloaded 39, added 0
+Progress: resolved 63, reused 0, downloaded 50, added 0
+Progress: resolved 80, reused 0, downloaded 52, added 0
+Progress: resolved 159, reused 0, downloaded 53, added 0
+Progress: resolved 186, reused 0, downloaded 55, added 0
+Progress: resolved 193, reused 0, downloaded 67, added 0
+Progress: resolved 193, reused 0, downloaded 161, added 0
+Progress: resolved 232, reused 0, downloaded 177, added 0
+Progress: resolved 269, reused 0, downloaded 177, added 0
+Progress: resolved 335, reused 0, downloaded 269, added 0
+Progress: resolved 430, reused 0, downloaded 346, added 0
+Progress: resolved 575, reused 0, downloaded 453, added 0
+?WARN? 3 deprecated subdependencies found: glob@10.5.0, glob@7.2.3, inflight@1.0.6
+Progress: resolved 594, reused 0, downloaded 508, added 0
+Packages: +520
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 594, reused 0, downloaded 509, added 0
+Progress: resolved 594, reused 0, downloaded 525, added 345
+Progress: resolved 594, reused 0, downloaded 525, added 520, done
+
+dependencies:
++ @hookform/resolvers 3.10.0 (5.2.2 is available)
++ @radix-ui/react-accordion 1.2.12
++ @radix-ui/react-alert-dialog 1.1.15
++ @radix-ui/react-aspect-ratio 1.1.8
++ @radix-ui/react-avatar 1.1.11
++ @radix-ui/react-checkbox 1.3.3
++ @radix-ui/react-collapsible 1.1.12
++ @radix-ui/react-context-menu 2.2.16
++ @radix-ui/react-dialog 1.1.15
++ @radix-ui/react-dropdown-menu 2.1.16
++ @radix-ui/react-hover-card 1.1.15
++ @radix-ui/react-label 2.1.8
++ @radix-ui/react-menubar 1.1.16
++ @radix-ui/react-navigation-menu 1.2.14
++ @radix-ui/react-popover 1.1.15
++ @radix-ui/react-progress 1.1.8
++ @radix-ui/react-radio-group 1.3.8
++ @radix-ui/react-scroll-area 1.2.10
++ @radix-ui/react-select 2.2.6
++ @radix-ui/react-separator 1.1.8
++ @radix-ui/react-slider 1.3.6
++ @radix-ui/react-slot 1.2.4
++ @radix-ui/react-switch 1.2.6
++ @radix-ui/react-tabs 1.1.13
++ @radix-ui/react-toast 1.2.15
++ @radix-ui/react-toggle 1.1.10
++ @radix-ui/react-toggle-group 1.1.11
++ @radix-ui/react-tooltip 1.2.8
++ @react-three/drei 10.7.7
++ @react-three/fiber 9.5.0
++ @vercel/analytics 1.6.1 (2.0.1 is available)
++ autoprefixer 10.4.27
++ class-variance-authority 0.7.1
++ clsx 2.1.1
++ cmdk 1.1.1
++ date-fns 4.1.0
++ embla-carousel-react 8.6.0
++ input-otp 1.4.2
++ lucide-react 0.564.0 (1.8.0 is available)
++ next 16.2.0 (16.2.3 is available)
++ next-themes 0.4.6
++ react 19.2.4 (19.2.5 is available)
++ react-day-picker 9.13.2 (9.14.0 is available)
++ react-dom 19.2.4 (19.2.5 is available)
++ react-hook-form 7.72.1
++ react-resizable-panels 2.1.9 (4.9.0 is available)
++ recharts 2.15.0 (3.8.1 is available)
++ sonner 1.7.4 (2.0.7 is available)
++ tailwind-merge 3.5.0
++ three 0.183.2
++ vaul 1.1.2
++ zod 3.25.76 (4.3.6 is available)
+
+devDependencies:
++ @tailwindcss/postcss 4.2.2
++ @types/jest 30.0.0
++ @types/node 22.19.17 (25.6.0 is available)
++ @types/react 19.2.14
++ @types/react-dom 19.2.3
++ jest 30.3.0
++ postcss 8.5.9
++ tailwindcss 4.2.2
++ ts-jest 29.4.9
++ ts-node 10.9.2
++ tw-animate-css 1.3.3 (1.4.0 is available)
++ typescript 5.7.3 (6.0.2 is available)
+
+? Warning ??????????????????????????????????????????????????????????????????????
+?                                                                              ?
+?   Ignored build scripts: sharp@0.34.5, unrs-resolver@1.11.1.                 ?
+?   Run "pnpm approve-builds" to pick which dependencies should be allowed     ?
+?   to run scripts.                                                            ?
+?                                                                              ?
+????????????????????????????????????????????????????????????????????????????????
+Done in 18.4s using pnpm v10.33.0
+Removing intermediate container 9217cc3a3b91
+ ---> 100e824b0ac2
+Step 9/28 : FROM base AS builder
+ ---> 026e4358dded
+Step 10/28 : WORKDIR /app
+ ---> Running in 39646004795f
+Removing intermediate container 39646004795f
+ ---> 314db855d5b1
+Step 11/28 : COPY --from=deps /app/node_modules ./node_modules
+ ---> 76b88f184e00
+Step 12/28 : COPY . .
+ ---> 98990b7be6ae
+Step 13/28 : ENV NEXT_TELEMETRY_DISABLED=1
+ ---> Running in ba30442d1405
+Removing intermediate container ba30442d1405
+ ---> 2ab7582d97d9
+Step 14/28 : ENV NODE_ENV=production
+ ---> Running in ab271cc5ef6c
+Removing intermediate container ab271cc5ef6c
+ ---> 473333521213
+Step 15/28 : RUN pnpm run build
+ ---> Running in aa0a82dd1149
+
+> my-project@0.1.0 build /app
+> next build
+
+? Next.js 16.2.0 (Turbopack)
+- Experiments (use with caution):
+  ? optimizePackageImports
+
+  Creating an optimized production build ...
+? Compiled successfully in 16.6s
+  Running TypeScript ...
+[91mFailed to type check.
+
+[0m[91m./components/stadium-3d.tsx:6:24
+Type error: Could not find a declaration file for module 'three'. '/app/node_modules/.pnpm/three@0.183.2/node_modules/three/build/three.module.js' implicitly has an 'any' type.
+  If the 'three' package actually exposes this module, consider sending a pull request to amend 'https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/three'
+
+  [90m4 |[0m [36mimport[0m { [33mCanvas[0m, useFrame, [33mThreeEvent[0m } [36mfrom[0m [32m'@react-three/fiber'[0m;
+  [90m5 |[0m [36mimport[0m { [33mOrbitControls[0m, [33mText[0m, [33mHtml[0m, [33mEnvironment[0m } [36mfrom[0m [32m'@react-three/drei'[0m;
+[31m[1m>[0m [90m6 |[0m [36mimport[0m * [36mas[0m [33mTHREE[0m [36mfrom[0m [32m'three'[0m;
+  [90m  |[0m                        [31m[1m^[0m
+  [90m7 |[0m [36mimport[0m [36mtype[0m { [33mCrowdData[0m, [33mVenueZone[0m } [36mfrom[0m [32m'@/lib/types'[0m;
+  [90m8 |[0m [36mimport[0m { [33mCard[0m, [33mCardContent[0m } [36mfrom[0m [32m'@/components/ui/card'[0m;
+  [90m9 |[0m [36mimport[0m { [33mBadge[0m } [36mfrom[0m [32m'@/components/ui/badge'[0m;
+[0m[91mNext.js build worker exited with code: 1 and signal: null
+[0m?ELIFECYCLE? Command failed with exit code 1.
+The command '/bin/sh -c pnpm run build' returned a non-zero code: 1
+ERROR
+ERROR: build step 0 "gcr.io/cloud-builders/docker" failed: step exited with non-zero status: 1
+--------------------------------------------------------------------------------

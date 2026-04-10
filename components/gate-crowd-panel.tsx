@@ -139,7 +139,7 @@ export default function GateCrowdPanel({ scenario = 'normal', compact = false }:
   useEffect(() => {
     const interval = setInterval(() => {
       setGates(prev => {
-        const updated = GateManager.stepGates(prev, scenario);
+        const updated = GateManager.updateGateStateTransitions(prev, scenario);
         setSuggestions(GateManager.generateSuggestions(updated));
         return updated;
       });
