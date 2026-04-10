@@ -175,3 +175,66 @@ export interface RegistrationResult {
   ticket?: Ticket;
   message: string;
 }
+
+// Gate Management Types
+export type GateStatus = 'low' | 'medium' | 'high' | 'closed';
+export type GateType = 'entry' | 'exit';
+
+export interface GateData {
+  id: string;
+  name: string;
+  type: GateType;
+  sector: 'north' | 'south' | 'east' | 'west';
+  capacity: number;
+  currentCount: number;
+  density: number; // 0-100
+  status: GateStatus;
+  trend: 'increasing' | 'decreasing' | 'stable';
+  waitTimeMinutes: number;
+  isOpen: boolean;
+  suggestion?: string;
+  timestamp: number;
+}
+
+export interface GateSuggestion {
+  fromGate: string;
+  toGate: string;
+  reason: string;
+  timeSavedMinutes: number;
+  urgency: 'info' | 'warning' | 'critical';
+}
+
+// Google Cloud AI Types
+export interface CloudAIZoneAnalysis {
+  zoneId: string;
+  zoneName: string;
+  estimatedCount: number;
+  densityPercent: number;
+  confidence: number; // 0-100
+  anomalyDetected: boolean;
+  anomalyType?: 'overcrowding' | 'rapid_movement' | 'bottleneck' | 'none';
+  description: string;
+  lastAnalyzed: number;
+}
+
+export interface CloudAIAnalysis {
+  sessionId: string;
+  modelVersion: string;
+  zones: CloudAIZoneAnalysis[];
+  overallRiskLevel: 'low' | 'medium' | 'high' | 'critical';
+  totalPeopleDetected: number;
+  processingTimeMs: number;
+  timestamp: number;
+}
+
+// Real-Time Broadcast Alert (Admin → User via localStorage)
+export interface BroadcastAlert {
+  id: string;
+  message: string;
+  type: 'info' | 'warning' | 'danger' | 'emergency';
+  gateAffected?: string;
+  suggestion?: string;
+  timestamp: number;
+  expiresAt: number; // timestamp when alert auto-clears
+  sentByAdmin: boolean;
+}

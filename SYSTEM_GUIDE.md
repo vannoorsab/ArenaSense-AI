@@ -1,10 +1,10 @@
-# MetroStadium AI Intelligence System
+# ArenaSense AI System
 
 ## Diamond-Grade Smart Stadium Platform with Advanced AI-Driven Decision Making
 
 ### System Overview
 
-MetroStadium is a comprehensive, real-world-deployable smart stadium system featuring:
+ArenaSense AI is a comprehensive, real-world-deployable smart stadium system featuring:
 
 - **Central AI Decision Engine** - Unified intelligence layer combining crowd data, predictions, and user context
 - **Emergency Intelligence System** - Detects abnormal behavior, calculates safe evacuation routes, escalates alerts
@@ -406,4 +406,4 @@ For more details, visit the **Dashboard** (`/dashboard`) which provides:
 
 ---
 
-**MetroStadium AI Intelligence System** - Delivering intelligent, safe stadium experiences through advanced AI decision-making.
+**ArenaSense AI System** - Delivering intelligent, safe stadium experiences through advanced AI decision-making.

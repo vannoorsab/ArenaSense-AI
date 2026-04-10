@@ -52,7 +52,7 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
   const handleDownload = () => {
     // Create a simple text representation for download
     const ticketText = `
-MetroStadium AI - Event Ticket
+ArenaSense AI - Event Ticket
 ==============================
 Event: ${event?.name}
 Date: ${event ? formatEventDate(event.date) : ''}

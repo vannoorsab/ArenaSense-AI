@@ -105,7 +105,7 @@ export class CrowdSimulator {
   /**
    * Simulate one time step (10 seconds = 1 step)
    */
-  static step(state: SimulationState, scenario?: 'normal' | 'entry_rush' | 'halftime' | 'exit_surge'): SimulationState {
+  static step(state: SimulationState, scenario?: 'normal' | 'entry_rush' | 'halftime' | 'exit_surge' | 'emergency'): SimulationState {
     const newCrowdData = new Map(state.crowdData);
     const now = Date.now();
 

@@ -17,31 +17,30 @@ import {
   Clock,
   ChevronRight,
   Play,
+  DoorOpen,
+  Activity,
+  Wifi,
 } from 'lucide-react';
-import { getAuthState } from '@/lib/auth-store';
+import LiveAlertBanner from '@/components/live-alert-banner';
 import { EVENTS, formatEventDate } from '@/lib/events-data';
 import { CSK_MATCHES, formatMatchDate, formatMatchTime } from '@/lib/csk-matches';
 
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const authState = getAuthState();
-    setIsAuthenticated(authState.isAuthenticated);
-  }, []);
-
   const featuredEvents = EVENTS.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Live Alert Banner (admin broadcasts appear here) */}
+      <LiveAlertBanner />
+
       {/* Navigation */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">MS</span>
+              <span className="text-primary-foreground font-bold text-sm">AS</span>
             </div>
-            <span className="font-bold text-lg">MetroStadium AI</span>
+            <span className="font-bold text-lg">ArenaSense AI</span>
           </Link>
           
           <nav className="flex items-center gap-4">
@@ -55,20 +54,12 @@ export default function Home() {
             <Link href="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Admin
             </Link>
-            {isAuthenticated ? (
-              <Link href="/my-tickets">
-                <Button size="sm">My Tickets</Button>
-              </Link>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">Sign In</Button>
-                </Link>
-                <Link href="/signup">
-                  <Button size="sm">Get Started</Button>
-                </Link>
-              </>
-            )}
+            <Link href="/stadium-live">
+              <Button size="sm" className="gap-1.5">
+                <Activity className="w-3.5 h-3.5" />
+                Live Stadium
+              </Button>
+            </Link>
           </nav>
         </div>
       </header>
@@ -115,6 +106,13 @@ export default function Home() {
               predictive alerts, and personalized recommendations. Never miss a moment.
             </p>
             <div className="flex flex-wrap gap-4">
+              <Link href="/stadium-live">
+                <Button size="lg" className="gap-2">
+                  <Activity className="w-4 h-4" />
+                  View Live Stadium
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
               <Link href="/csk">
                 <Button size="lg" className="gap-2 bg-[#FDB913] hover:bg-yellow-400 text-[#003B7B]">
                   CSK IPL 2026
@@ -123,8 +121,7 @@ export default function Home() {
               </Link>
               <Link href="/events">
                 <Button size="lg" variant="outline" className="gap-2">
-                  All Events
-                  <ArrowRight className="w-4 h-4" />
+                  Browse Events
                 </Button>
               </Link>
               <Link href="/scenario-testing">
@@ -156,19 +153,19 @@ export default function Home() {
                 description: 'AI-optimized routes that avoid crowds and get you where you need to go faster.',
               },
               {
-                icon: Zap,
-                title: 'Live Heatmaps',
-                description: 'Real-time crowd density visualization across all stadium zones.',
+                icon: DoorOpen,
+                title: 'Gate Management',
+                description: 'Real-time gate density tracking with Green/Yellow/Red status and smart redirect suggestions.',
               },
               {
-                icon: Shield,
-                title: 'Emergency Safety',
-                description: 'Intelligent evacuation routing and instant safety alerts when needed.',
+                icon: Wifi,
+                title: 'Instant Alerts',
+                description: 'Admin broadcasts reach you instantly — gate congestion, emergencies, and guidance.',
               },
               {
-                icon: Users,
-                title: 'Queue Prediction',
-                description: 'Know wait times before you go with AI-powered queue forecasting.',
+                icon: Brain,
+                title: 'Cloud AI Vision',
+                description: 'Google Cloud Vision AI analyzes crowd feeds and detects anomalies automatically.',
               },
             ].map((feature, index) => (
               <Card key={index} className="relative overflow-hidden group hover:shadow-lg transition-shadow">
@@ -200,25 +197,25 @@ export default function Home() {
               {
                 step: '01',
                 title: 'Browse Events',
-                description: 'Discover upcoming sports and entertainment events at MetroStadium.',
+                description: 'Discover upcoming sports and entertainment events at ArenaSense AI.',
                 href: '/events',
               },
               {
                 step: '02',
-                title: 'Register & Get Ticket',
-                description: 'Secure your spot and receive a unique QR code ticket.',
-                href: '/events',
+                title: 'Direct Entry — No Sign-up',
+                description: 'Access the stadium system instantly. No login required — fast and frictionless.',
+                href: '/stadium-live',
               },
               {
                 step: '03',
-                title: 'Smart Entry',
-                description: 'Scan your QR code at the gate for instant validation and entry.',
-                href: '/my-tickets',
+                title: 'Gate Guidance',
+                description: 'AI tells you which gate has the lowest crowd. Save time, avoid queues.',
+                href: '/admin',
               },
               {
                 step: '04',
                 title: 'Live Experience',
-                description: 'Navigate with AI, avoid crowds, and enjoy your event.',
+                description: 'Navigate with AI, avoid crowds, get instant admin alerts, and enjoy your event.',
                 href: '/scenario-testing',
               },
             ].map((item, index) => (
@@ -347,14 +344,20 @@ export default function Home() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Experience Smarter Events?</h2>
           <p className="text-muted-foreground max-w-xl mx-auto mb-8">
-            Join thousands of attendees who enjoy seamless stadium experiences with MetroStadium AI.
+            No account required. Jump straight into the stadium experience — real-time gates, AI alerts, and live crowd data.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg">Create Free Account</Button>
+            <Link href="/stadium-live">
+              <Button size="lg" className="gap-2">
+                <Activity className="w-4 h-4" />
+                View Live Stadium
+              </Button>
             </Link>
             <Link href="/admin">
               <Button size="lg" variant="outline">Admin Dashboard</Button>
+            </Link>
+            <Link href="/events">
+              <Button size="lg" variant="outline">Browse Events</Button>
             </Link>
           </div>
         </div>
@@ -366,9 +369,9 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xs">MS</span>
+                <span className="text-primary-foreground font-bold text-xs">AS</span>
               </div>
-              <span className="text-sm text-muted-foreground">MetroStadium AI - Smart Stadium Platform</span>
+              <span className="text-sm text-muted-foreground">ArenaSense AI - Smart Stadium Platform</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <Link href="/events" className="hover:text-foreground transition-colors">Events</Link>

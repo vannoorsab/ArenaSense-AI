@@ -51,7 +51,7 @@ export default function LoginPage() {
         <div className="space-y-8">
           <div>
             <h1 className="text-4xl font-bold text-primary-foreground mb-4">
-              MetroStadium AI
+              ArenaSense AI
             </h1>
             <p className="text-primary-foreground/80 text-lg max-w-md">
               Experience the future of live events with intelligent crowd management and personalized navigation.

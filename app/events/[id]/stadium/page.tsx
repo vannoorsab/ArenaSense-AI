@@ -231,14 +231,12 @@ export default function EventStadiumPage({ params }: { params: Promise<{ id: str
 
     const mockUser: User = {
       id: 'event-attendee',
-      name: 'Attendee',
       currentZone,
-      ticket: { section: currentZone, seat: 'A1', gate: 'Gate A' },
+      location: { x: 0, y: 0, zone: currentZone },
       preferences: {
         avoidCrowds: true,
         preferQuickestRoute: true,
         accessibility: false,
-        notifications: true,
       },
     };
 
@@ -489,9 +487,8 @@ export default function EventStadiumPage({ params }: { params: Promise<{ id: str
                     <Badge className="text-white" style={{ backgroundColor: colors.primary }}>
                       {recommendation.type.toUpperCase()}
                     </Badge>
-                    <p className="text-white/90 text-sm">{recommendation.message}</p>
-                    <p className="text-white/60 text-xs">{recommendation.reasoning}</p>
-                    <div className="flex items-center justify-between text-xs">
+                    <p className="text-white/90 text-sm">{recommendation.description}</p>
+                    <div className="flex items-center justify-between text-xs mt-3">
                       <span className="text-white/50">Confidence</span>
                       <span className="text-white font-medium">{recommendation.confidence}%</span>
                     </div>

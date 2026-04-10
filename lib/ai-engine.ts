@@ -10,6 +10,8 @@ import {
 } from './types';
 import { findShortestRoute, getNearbyZones, DEFAULT_VENUE } from './venue-schema';
 
+export type { AIRecommendation, CrowdData, PredictionData, EvacuationRoute, AnomalyAlert };
+
 /**
  * Central AI Decision Engine
  * Combines user context, crowd data, predictions, and system signals
@@ -76,7 +78,7 @@ export class AIDecisionEngine {
       confidence: 98,
       context: {
         reason: criticalAlert?.type,
-        affectedZones: criticalAlert?.affectedZones || [user.currentZone],
+        affectedZones: criticalAlert ? [criticalAlert.zone] : [user.currentZone],
       },
       timestamp: Date.now(),
     };

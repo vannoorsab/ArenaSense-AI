@@ -7,7 +7,7 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'MetroStadium AI Intelligence - Smart Stadium Platform',
+  title: 'ArenaSense AI - Smart Stadium Platform',
   description: 'Diamond-Grade AI-powered smart stadium system with real-time crowd intelligence, emergency safety systems, and advanced decision-making',
   generator: 'v0.app',
   icons: {

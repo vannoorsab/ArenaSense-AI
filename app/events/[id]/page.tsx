@@ -96,9 +96,9 @@ export default function EventDetailsPage({ params }: { params: Promise<{ id: str
           
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">MS</span>
+              <span className="text-primary-foreground font-bold text-sm">AS</span>
             </div>
-            <span className="font-bold text-lg">MetroStadium</span>
+            <span className="font-bold text-lg">ArenaSense AI</span>
           </Link>
         </div>
       </header>

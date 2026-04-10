@@ -231,8 +231,10 @@ export function getStadiumById(id: string): IPLStadium | undefined {
 }
 
 // Get all stadiums
+export const IPL_STADIUMS: IPLStadium[] = [CHEPAUK_STADIUM, WANKHEDE_STADIUM, CHINNASWAMY_STADIUM, EDEN_GARDENS, RAJIV_GANDHI_STADIUM];
+
 export function getAllStadiums(): IPLStadium[] {
-  return [CHEPAUK_STADIUM, WANKHEDE_STADIUM, CHINNASWAMY_STADIUM, EDEN_GARDENS, RAJIV_GANDHI_STADIUM];
+  return IPL_STADIUMS;
 }
 
 // Match phase crowd multipliers

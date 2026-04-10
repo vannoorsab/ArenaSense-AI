@@ -200,7 +200,7 @@ export default function CSKMatchesPage() {
       {/* Footer */}
       <footer className="border-t border-yellow-500/20 bg-[#001F3F] py-8">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-blue-300 text-sm">Powered by MetroStadium AI Intelligence</p>
+          <p className="text-blue-300 text-sm">Powered by ArenaSense AI</p>
           <p className="text-yellow-500 text-xs mt-1">Whistle Podu! Super Kings!</p>
         </div>
       </footer>

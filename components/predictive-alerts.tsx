@@ -2,10 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, TrendingUp, Clock, ChevronRight } from 'lucide-react';
-import { CrowdPrediction } from '@/lib/types';
+import { PredictionData } from '@/lib/types';
 
 interface PredictiveAlertsProps {
-  predictions: Map<string, CrowdPrediction>;
+  predictions: PredictionData[];
   currentZone: string;
 }
 
@@ -18,8 +18,8 @@ export default function PredictiveAlerts({ predictions, currentZone }: Predictiv
     timeToEvent: number;
   }[] = [];
 
-  predictions.forEach((prediction, zone) => {
-    // Type guard - ensure zone is a valid string
+  predictions.forEach((prediction) => {
+    const zone = prediction.zone;
     if (typeof zone !== 'string' || !zone) return;
     
     // Check if zone will become significantly more crowded
@@ -31,7 +31,7 @@ export default function PredictiveAlerts({ predictions, currentZone }: Predictiv
         zone: String(zone),
         currentDensity: Math.max(0, currentDensity),
         predictedDensity,
-        timeToEvent: Math.floor(Math.random() * 15) + 5, // 5-20 minutes
+        timeToEvent: prediction.timeToImpact || (Math.floor(Math.random() * 15) + 5), // use impact time if possible
       });
     }
   });

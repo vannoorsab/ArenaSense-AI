@@ -1,4 +1,5 @@
 import { SportEvent } from './types';
+export type { SportEvent };
 
 // Sample events data for the smart stadium system
 export const EVENTS: SportEvent[] = [

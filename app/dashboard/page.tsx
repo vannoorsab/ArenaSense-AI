@@ -13,6 +13,7 @@ import {
   Settings,
 } from 'lucide-react';
 import Link from 'next/link';
+import LiveAlertBanner from '@/components/live-alert-banner';
 
 export default function DashboardPage() {
   const interfaces = [
@@ -85,10 +86,11 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <LiveAlertBanner />
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="max-w-7xl mx-auto px-4 py-12">
-          <h1 className="text-4xl font-bold mb-2">MetroStadium AI Intelligence System</h1>
+          <h1 className="text-4xl font-bold mb-2">ArenaSense AI System</h1>
           <p className="text-lg text-muted-foreground">
             Diamond-Grade Smart Stadium Platform with Advanced AI-Driven Decision Making
           </p>
@@ -276,7 +278,7 @@ export default function DashboardPage() {
             <CardContent>
               <div className="space-y-4">
                 <p className="text-muted-foreground">
-                  The MetroStadium AI Intelligence System provides three main interfaces for different use cases:
+                  The ArenaSense AI System provides three main interfaces for different use cases:
                 </p>
                 <ol className="space-y-3 text-sm">
                   <li className="flex gap-3">
@@ -310,7 +312,7 @@ export default function DashboardPage() {
       {/* Footer */}
       <footer className="border-t border-border mt-16 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>MetroStadium AI Intelligence System • Diamond-Grade Implementation with Advanced Safety Features</p>
+          <p>ArenaSense AI System • Production-Ready Platform</p>
         </div>
       </footer>
     </div>

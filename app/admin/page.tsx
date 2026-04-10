@@ -9,15 +9,18 @@ import {
   AlertTriangle, TrendingUp, Users, AlertCircle, Activity, 
   Send, Play, Pause, RotateCcw, Radio, ShieldAlert, Eye,
   ChevronDown, ArrowLeft, Calendar, MapPin, Ticket, Clock,
-  CheckCircle2, XCircle, BarChart3
+  CheckCircle2, XCircle, BarChart3, DoorOpen, Brain, Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import SystemMetricsChart from '@/components/system-metrics-chart';
 import PredictiveAnalytics from '@/components/predictive-analytics';
 import CrowdHeatmap from '@/components/crowd-heatmap';
+import GateCrowdPanel from '@/components/gate-crowd-panel';
+import AIVisionPanel from '@/components/ai-vision-panel';
 import { CrowdSimulator, SimulationState } from '@/lib/crowd-simulator';
 import { AIDecisionEngine } from '@/lib/ai-engine';
 import { AnomalyAlert, SystemMetrics } from '@/lib/types';
+import { AlertSync } from '@/lib/alert-sync';
 import { EVENTS, formatEventDate, getSportIcon, type SportEvent } from '@/lib/events-data';
 import { CSK_MATCHES, formatMatchDate } from '@/lib/csk-matches';
 
@@ -92,10 +95,17 @@ export default function AdminDashboard() {
 
   const handleBroadcast = () => {
     if (broadcastMessage.trim()) {
+      AlertSync.broadcastSystemAlert(broadcastMessage.trim(), 'warning', { expiryMs: 60_000 });
       setBroadcastSent(true);
       setTimeout(() => setBroadcastSent(false), 3000);
       setBroadcastMessage('');
     }
+  };
+
+  const handlePresetAlert = (preset: keyof typeof AlertSync.presets) => {
+    AlertSync.presets[preset]();
+    setBroadcastSent(true);
+    setTimeout(() => setBroadcastSent(false), 3000);
   };
 
   const handleScenarioChange = (newScenario: Scenario) => {
@@ -231,10 +241,18 @@ export default function AdminDashboard() {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="bg-card border">
+          <TabsList className="bg-card border flex-wrap h-auto gap-1 p-1">
             <TabsTrigger value="overview" className="gap-1.5">
               <Eye className="w-4 h-4" />
               Live Overview
+            </TabsTrigger>
+            <TabsTrigger value="gates" className="gap-1.5">
+              <DoorOpen className="w-4 h-4" />
+              Gates
+            </TabsTrigger>
+            <TabsTrigger value="ai-vision" className="gap-1.5">
+              <Brain className="w-4 h-4" />
+              Cloud AI
             </TabsTrigger>
             <TabsTrigger value="events" className="gap-1.5">
               <Calendar className="w-4 h-4" />
@@ -467,34 +485,107 @@ export default function AdminDashboard() {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Radio className="w-4 h-4" />
-                      Broadcast Message
+                      Broadcast to Users
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <textarea
-                      value={broadcastMessage}
-                      onChange={(e) => setBroadcastMessage(e.target.value)}
-                      placeholder="Enter announcement..."
-                      className="w-full h-16 px-3 py-2 text-xs border border-border rounded-lg bg-card resize-none"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={handleBroadcast}
-                      disabled={!broadcastMessage.trim()}
-                      className="w-full gap-1.5"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      Send to All
-                    </Button>
+                    {/* Quick Presets */}
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Quick Presets</p>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      <Button size="sm" variant="outline" className="w-full text-xs h-7 gap-1 justify-start" onClick={() => handlePresetAlert('gate2Overcrowded')}>
+                        <Zap className="w-3 h-3 text-red-500" /> Gate B Overcrowded
+                      </Button>
+                      <Button size="sm" variant="outline" className="w-full text-xs h-7 gap-1 justify-start" onClick={() => handlePresetAlert('useAlternateExit')}>
+                        <Zap className="w-3 h-3 text-amber-500" /> Use Alternate Exit
+                      </Button>
+                      <Button size="sm" variant="outline" className="w-full text-xs h-7 gap-1 justify-start" onClick={() => handlePresetAlert('gateBlockage')}>
+                        <Zap className="w-3 h-3 text-amber-500" /> Gate C Blockage
+                      </Button>
+                      <Button size="sm" variant="destructive" className="w-full text-xs h-7 gap-1 justify-start" onClick={() => handlePresetAlert('emergency')}>
+                        <ShieldAlert className="w-3 h-3" /> Emergency Broadcast
+                      </Button>
+                    </div>
+                    <div className="border-t border-border pt-2">
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-1.5">Custom Message</p>
+                      <textarea
+                        value={broadcastMessage}
+                        onChange={(e) => setBroadcastMessage(e.target.value)}
+                        placeholder="Enter custom announcement..."
+                        className="w-full h-14 px-3 py-2 text-xs border border-border rounded-lg bg-card resize-none"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={handleBroadcast}
+                        disabled={!broadcastMessage.trim()}
+                        className="w-full gap-1.5 mt-1.5"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        Send to All
+                      </Button>
+                    </div>
                     {broadcastSent && (
                       <p className="text-xs text-green-600 text-center animate-pulse">
-                        Message broadcast to all attendees!
+                        ✅ Alert broadcast to all users!
                       </p>
                     )}
                   </CardContent>
                 </Card>
               </div>
             </div>
+          </TabsContent>
+
+          {/* Gates Tab */}
+          <TabsContent value="gates" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <DoorOpen className="w-4 h-4" />
+                      Gate Crowd Management
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Real-time crowd density at all entry and exit gates
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <GateCrowdPanel scenario={scenario} />
+                  </CardContent>
+                </Card>
+              </div>
+              <div>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Brain className="w-4 h-4" />
+                      Cloud AI Vision
+                    </CardTitle>
+                    <CardDescription className="text-xs">Google Cloud Vision AI analysis</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AIVisionPanel scenario={scenario} compact />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Cloud AI Tab */}
+          <TabsContent value="ai-vision" className="space-y-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Brain className="w-4 h-4" />
+                  Google Cloud Vision AI — Crowd Analysis
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  AI-powered crowd density estimation across all camera feeds · Updates every 5 seconds
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AIVisionPanel scenario={scenario} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Events Tab */}

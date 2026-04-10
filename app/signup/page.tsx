@@ -65,7 +65,7 @@ export default function SignupPage() {
         <div className="space-y-8">
           <div>
             <h1 className="text-4xl font-bold text-secondary-foreground mb-4">
-              Join MetroStadium
+              Join ArenaSense AI
             </h1>
             <p className="text-secondary-foreground/80 text-lg max-w-md">
               Create your account and unlock a smarter way to experience live events.
@@ -107,7 +107,7 @@ export default function SignupPage() {
             <CardHeader className="space-y-1 pb-6">
               <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
               <CardDescription>
-                Enter your details to get started with MetroStadium
+                Enter your details to get started with ArenaSense AI
               </CardDescription>
             </CardHeader>
             <CardContent>

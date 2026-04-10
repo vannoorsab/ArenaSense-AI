@@ -123,10 +123,10 @@ export default function EventsPage() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/20">
-              <span className="text-primary-foreground font-black text-sm">MS</span>
+              <span className="text-primary-foreground font-black text-sm">AS</span>
             </div>
             <div className="hidden sm:block">
-              <span className="font-bold text-lg tracking-tight">MetroStadium</span>
+              <span className="font-bold text-lg tracking-tight">ArenaSense AI</span>
               <p className="text-[10px] text-muted-foreground -mt-0.5">AI-Powered Events</p>
             </div>
           </Link>

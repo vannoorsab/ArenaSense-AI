@@ -157,7 +157,7 @@ export default function AttendeeInterface() {
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold">MetroStadium Navigator</h1>
+              <h1 className="text-xl font-bold">ArenaSense AI Navigator</h1>
               <p className="text-xs text-muted-foreground">AI-Powered Crowd Intelligence</p>
             </div>
             <div className="flex items-center gap-3">
