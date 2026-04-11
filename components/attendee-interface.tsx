@@ -196,15 +196,17 @@ export default function AttendeeInterface() {
                     <CardTitle className="text-base">Live Crowd Heatmap</CardTitle>
                     <CardDescription className="text-xs">Real-time density by zone</CardDescription>
                   </div>
-                  {/* Emergency Button */}
+                  {/* Emergency Button - WOW Feature */}
                   <Button
                     variant={emergencyMode ? 'destructive' : 'outline'}
                     size="sm"
                     onClick={() => setEmergencyMode(!emergencyMode)}
-                    className="gap-1.5 h-8"
+                    className="gap-1.5 h-8 shadow-sm transition-all hover:scale-105"
+                    aria-label={emergencyMode ? 'Exit Emergency Evacuation Mode' : 'Activate Emergency Evacuation Support'}
+                    title="Activate Emergency Mode"
                   >
-                    <ShieldAlert className="w-4 h-4" />
-                    {emergencyMode ? 'Exit Emergency' : 'Emergency Mode'}
+                    <ShieldAlert className={`w-4 h-4 ${emergencyMode ? 'animate-pulse' : ''}`} />
+                    {emergencyMode ? 'EXIT EMERGENCY' : 'EMERGENCY MODE'}
                   </Button>
                 </div>
               </CardHeader>
@@ -258,6 +260,7 @@ export default function AttendeeInterface() {
                     size="sm"
                     onClick={() => setIsRunning(!isRunning)}
                     className="gap-1.5 h-8"
+                    aria-label={isRunning ? 'Pause crowd simulation' : 'Start crowd simulation'}
                   >
                     {isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                     {isRunning ? 'Pause' : 'Play'}

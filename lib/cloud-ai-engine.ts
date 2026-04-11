@@ -1,5 +1,6 @@
 import { CloudAIAnalysis, CloudAIZoneAnalysis } from './types';
 import { GoogleCloudLogging, LogSeverity } from './services/google-cloud-logging';
+import { CloudConfig } from './services/cloud-config';
 
 /**
  * Google Cloud Vision AI Integration (Simulated)
@@ -7,8 +8,9 @@ import { GoogleCloudLogging, LogSeverity } from './services/google-cloud-logging
  * Here: generates realistic simulated responses that feed heatmaps and alerts
  */
 
-const MODEL_VERSION = 'crowd-vision-v2.1-gemini';
-const CLOUD_PROJECT = process.env.NEXT_PUBLIC_GCP_PROJECT_ID || 'arenahsense-ai-prod';
+const MODEL_VERSION = CloudConfig.ai.modelVersion;
+const CLOUD_PROJECT = CloudConfig.projectId;
+const VISION_ENDPOINT = CloudConfig.ai.visionEndpoint;
 
 const VISION_ZONES = [
   { id: 'entry-north', name: 'North Entry Gate A', baseCount: 1200 },
@@ -157,16 +159,22 @@ export class CloudAIEngine {
     };
   }
 
+  /**
+   * Retrieves metadata about the current AI engine configuration.
+   */
   static getProjectInfo() {
     return {
       project: CLOUD_PROJECT,
-      region: 'asia-south1',
+      region: CloudConfig.region,
       model: MODEL_VERSION,
-      endpoint: `https://vision.googleapis.com/v1/projects/${CLOUD_PROJECT}/`,
+      endpoint: VISION_ENDPOINT,
       callsThisSession: this.callCount,
     };
   }
 
+  /**
+   * Maps risk levels to UI-friendly color codes.
+   */
   static getRiskColor(risk: CloudAIAnalysis['overallRiskLevel']): string {
     return {
       low: '#22c55e',

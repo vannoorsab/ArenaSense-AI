@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Mic, Send, Volume2, Loader, Navigation, ShieldAlert, MapPin, Utensils, DoorOpen, Sparkles } from 'lucide-react';
 import { ResilienceSystem } from '@/lib/resilience-system';
+import { AIResponseService } from '@/lib/services/ai-response-service';
+import { InputValidator } from '@/lib/services/input-validator';
+import { formatZoneName } from '@/lib/utils/zone-formatter';
 
 interface Message {
   id: string;
@@ -111,7 +114,7 @@ export default function AIAssistant({
 
     setIsProcessing(true);
     setTimeout(() => {
-      const response = generateQuickActionResponse(actionId, currentZone, crowdDensity);
+      const response = AIResponseService.generateQuickActionResponse(actionId, currentZone, crowdDensity);
       addAssistantMessage(response);
       setIsProcessing(false);
     }, 600);
@@ -119,22 +122,23 @@ export default function AIAssistant({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isProcessing) return;
+    const sanitizedInput = InputValidator.sanitizeString(input);
+    if (!sanitizedInput || isProcessing) return;
 
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
       role: 'user',
-      content: input,
+      content: sanitizedInput,
       timestamp: Date.now(),
     };
     setMessages((prev) => [...prev, userMessage]);
 
-    const userInput = input;
+    const userInput = sanitizedInput;
     setInput('');
     setIsProcessing(true);
 
     setTimeout(() => {
-      const response = generateAIResponse(userInput, currentZone, crowdDensity);
+      const response = AIResponseService.generateNaturalLanguageResponse(userInput, currentZone, crowdDensity);
       addAssistantMessage(response);
       setIsProcessing(false);
     }, 600);
@@ -273,60 +277,4 @@ export default function AIAssistant({
   );
 }
 
-function formatZoneName(zone: string): string {
-  return zone
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
 
-function generateQuickActionResponse(action: string, currentZone: string, crowdDensity: number): string {
-  switch (action) {
-    case 'exit':
-      return 'The nearest exit is Gate North, about 2 minutes walk. It\'s currently clear with no congestion. I recommend heading there via the upper concourse.';
-    case 'avoid':
-      return crowdDensity > 60
-        ? 'Your area is quite busy. Move to the East Concourse - it\'s 40% less crowded right now. Take the stairs on your left.'
-        : 'Good news! Your current area has moderate traffic. The West section is even quieter if you need more space.';
-    case 'facility':
-      return 'Nearest restrooms are 1 minute away in the North Concourse. Current wait time is approximately 3 minutes. South restrooms have no wait.';
-    case 'food':
-      return 'Food courts: North Concourse (5 min wait), South Concourse (8 min wait). For fastest service, try the grab-and-go station near Gate East.';
-    default:
-      return 'How can I help you navigate the stadium?';
-  }
-}
-
-function generateAIResponse(userInput: string, currentZone: string, crowdDensity: number): string {
-  const lowerInput = userInput.toLowerCase();
-
-  if (lowerInput.includes('bathroom') || lowerInput.includes('restroom') || lowerInput.includes('toilet')) {
-    return 'Nearest restrooms: North Concourse (1 min, ~3 min wait) or South Concourse (2 min, no wait). I recommend South for faster service.';
-  }
-
-  if (lowerInput.includes('food') || lowerInput.includes('hungry') || lowerInput.includes('drink') || lowerInput.includes('eat')) {
-    return 'Best option now: North Food Court has the shortest lines (5 min). For drinks only, try the express stand at Gate East.';
-  }
-
-  if (lowerInput.includes('exit') || lowerInput.includes('leave') || lowerInput.includes('go home')) {
-    return 'Nearest exit: Gate North (2 min walk, clear). Alternative: Gate East (3 min, moderate traffic). I suggest Gate North.';
-  }
-
-  if (lowerInput.includes('crowd') || lowerInput.includes('busy') || lowerInput.includes('quiet') || lowerInput.includes('empty')) {
-    return `Current density here: ${crowdDensity.toFixed(0)}%. ${crowdDensity > 60 ? 'Quite busy. East Concourse is 40% quieter.' : 'Comfortable level. West side is even emptier.'}`;
-  }
-
-  if (lowerInput.includes('help') || lowerInput.includes('emergency') || lowerInput.includes('medical')) {
-    return 'For emergencies, medical staff are at the West Concourse Medical Center. For life-threatening situations, alert staff or call 911 immediately.';
-  }
-
-  if (lowerInput.includes('shop') || lowerInput.includes('merchandise') || lowerInput.includes('buy')) {
-    return 'Merchandise: East Concourse (shorter line) or North Entrance. Team store near Gate South has the best selection.';
-  }
-
-  if (lowerInput.includes('seat') || lowerInput.includes('section')) {
-    return `You're in ${formatZoneName(currentZone)}. Need help finding a specific section? Tell me your seat number.`;
-  }
-
-  return `I'm here to help! Current location: ${formatZoneName(currentZone)} (${crowdDensity.toFixed(0)}% density). Ask about exits, food, restrooms, or crowd levels.`;
-}
