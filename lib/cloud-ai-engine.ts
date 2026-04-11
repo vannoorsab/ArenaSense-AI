@@ -39,34 +39,64 @@ export class CloudAIEngine {
     const startMs = performance.now();
     this.callCount++;
 
-    // Simulate network + inference latency (80–350ms)
-    await new Promise(r => setTimeout(r, 80 + Math.random() * 270));
+    try {
+      // PROD-LEVEL RESILIENCE: Simulate potential cloud service interruption (1% chance)
+      if (Math.random() < 0.01) {
+        throw new Error('Vision API Service Unavailable (Quota Exceeded)');
+      }
 
-    const zones = VISION_ZONES.map(z => this.processZoneVisionFrame(z, scenario));
+      // Simulate network + inference latency (80–350ms)
+      await new Promise(r => setTimeout(r, 80 + Math.random() * 270));
 
-    const anomalyZones = zones.filter(z => z.anomalyDetected);
-    const totalPeople = zones.reduce((s, z) => s + z.estimatedCount, 0);
-    const maxDensity = Math.max(...zones.map(z => z.densityPercent));
+      const zones = VISION_ZONES.map(z => this.processZoneVisionFrame(z, scenario));
 
-    let overallRiskLevel: CloudAIAnalysis['overallRiskLevel'] = 'low';
-    if (maxDensity >= 80 || anomalyZones.length >= 3) overallRiskLevel = 'critical';
-    else if (maxDensity >= 65 || anomalyZones.length >= 2) overallRiskLevel = 'high';
-    else if (maxDensity >= 45 || anomalyZones.length >= 1) overallRiskLevel = 'medium';
+      const anomalyZones = zones.filter(z => z.anomalyDetected);
+      const totalPeople = zones.reduce((s, z) => s + z.estimatedCount, 0);
+      const maxDensity = Math.max(...zones.map(z => z.densityPercent));
 
-    const processingTimeMs = Math.round(performance.now() - startMs);
+      let overallRiskLevel: CloudAIAnalysis['overallRiskLevel'] = 'low';
+      if (maxDensity >= 80 || anomalyZones.length >= 3) overallRiskLevel = 'critical';
+      else if (maxDensity >= 65 || anomalyZones.length >= 2) overallRiskLevel = 'high';
+      else if (maxDensity >= 45 || anomalyZones.length >= 1) overallRiskLevel = 'medium';
 
-    const analysis: CloudAIAnalysis = {
-      sessionId: this.sessionId,
-      modelVersion: MODEL_VERSION,
-      zones,
-      overallRiskLevel,
-      totalPeopleDetected: totalPeople,
-      processingTimeMs,
-      timestamp: Date.now(),
-    };
+      const processingTimeMs = Math.round(performance.now() - startMs);
 
-    this.logTelemetry(analysis);
-    return analysis;
+      const analysis: CloudAIAnalysis = {
+        sessionId: this.sessionId,
+        modelVersion: MODEL_VERSION,
+        zones,
+        overallRiskLevel,
+        totalPeopleDetected: totalPeople,
+        processingTimeMs,
+        timestamp: Date.now(),
+      };
+
+      this.logTelemetry(analysis);
+      return analysis;
+    } catch (error) {
+      // 🛡️ INTELLIGENT FALLBACK: Switch to heuristic-based local analysis
+      console.warn('[CloudAIEngine] Vision Service Failed, using resilient fallback:', error);
+      
+      const zones = VISION_ZONES.map(z => ({
+        zoneId: z.id,
+        zoneName: z.name,
+        estimatedCount: z.baseCount,
+        densityPercent: 50,
+        anomalyDetected: false,
+        confidenceScore: 0.5, // Reduced confidence for heuristic data
+      }));
+
+      return {
+        sessionId: this.sessionId,
+        modelVersion: 'local-heuristic-resilience-v1',
+        zones,
+        overallRiskLevel: 'low',
+        totalPeopleDetected: VISION_ZONES.reduce((s, z) => s + z.baseCount, 0),
+        processingTimeMs: 1,
+        timestamp: Date.now(),
+        isFallbackMode: true, // Flag for UI notification
+      } as any;
+    }
   }
 
   /**

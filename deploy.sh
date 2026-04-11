@@ -6,7 +6,7 @@
 set -euo pipefail
 
 # ─── Config ────────────────────────────────────────────────
-PROJECT_ID="${GOOGLE_CLOUD_PROJECT:-$(gcloud config get-value project)}"
+PROJECT_ID="${1:-${GOOGLE_CLOUD_PROJECT:-$(gcloud config get-value project)}}"
 REGION="${GOOGLE_CLOUD_REGION:-asia-south1}"
 SERVICE="areansense-ai"
 REPO="areansense-ai"

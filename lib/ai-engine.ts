@@ -9,6 +9,7 @@ import {
   SystemMetrics,
 } from './types';
 import { findShortestRoute, getNearbyZones, DEFAULT_VENUE } from './venue-schema';
+import { SchemaNormalizer } from './services/schema-normalizer';
 
 export type { AIRecommendation, CrowdData, PredictionData, EvacuationRoute, AnomalyAlert };
 
@@ -234,11 +235,17 @@ export class AIDecisionEngine {
    * Detect anomalies and generate alerts
    */
   static detectAnomalies(
-    crowdData: Map<string, CrowdData>,
+    rawCrowdData: Map<string, CrowdData>,
     predictions: PredictionData[]
   ): AnomalyAlert[] {
     const alerts: AnomalyAlert[] = [];
     const now = Date.now();
+    
+    // 🛡️ DATA NORMALIZATION LAYER
+    const crowdData = new Map<string, CrowdData>();
+    rawCrowdData.forEach((val, key) => {
+      crowdData.set(key, SchemaNormalizer.normalizeCrowdData(val));
+    });
 
     crowdData.forEach((crowd, zone) => {
       // Overcrowding detection
