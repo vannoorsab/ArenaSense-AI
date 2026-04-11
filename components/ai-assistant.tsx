@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Mic, Send, Volume2, Loader, Navigation, ShieldAlert, MapPin, Utensils, DoorOpen } from 'lucide-react';
+import { Mic, Send, Volume2, Loader, Navigation, ShieldAlert, MapPin, Utensils, DoorOpen, Sparkles } from 'lucide-react';
 import { ResilienceSystem } from '@/lib/resilience-system';
 
 interface Message {
@@ -27,6 +27,11 @@ const QUICK_ACTIONS = [
   { id: 'food', label: 'Food & Drinks', icon: Utensils, color: 'text-accent' },
 ];
 
+/**
+ * AI Assistant Component
+ * Provides an interactive chat interface powered by Google Gemini (simulated).
+ * Features voice input, text-to-speech, and offline resilience.
+ */
 export default function AIAssistant({
   currentZone,
   crowdDensity,
@@ -160,20 +165,27 @@ export default function AIAssistant({
     <Card className="flex flex-col">
       <CardHeader className="border-b border-border pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">AI Assistant</CardTitle>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-            networkStatus === 'online'
-              ? 'bg-green-100 text-green-700'
-              : 'bg-orange-100 text-orange-700'
-          }`}>
-            {networkStatus === 'online' ? 'Online' : 'Offline'}
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+            <CardTitle className="text-base">Gemini Intelligence</CardTitle>
+          </div>
+          <span 
+            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              networkStatus === 'online'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-orange-100 text-orange-700'
+            }`}
+            role="status"
+            aria-label={`System is ${networkStatus}`}
+          >
+            {networkStatus === 'online' ? 'Cloud Connected' : 'Edge Local Mode'}
           </span>
         </div>
       </CardHeader>
 
       <CardContent className="flex flex-col p-3 space-y-3">
         {/* Quick Action Buttons */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Quick assistance actions">
           {QUICK_ACTIONS.map((action) => (
             <Button
               key={action.id}
@@ -182,15 +194,22 @@ export default function AIAssistant({
               onClick={() => handleQuickAction(action.id)}
               disabled={isProcessing}
               className="h-9 text-xs justify-start gap-2"
+              aria-label={`Ask Gemini to ${action.label}`}
             >
-              <action.icon className={`w-3.5 h-3.5 ${action.color}`} />
+              <action.icon className={`w-3.5 h-3.5 ${action.color}`} aria-hidden="true" />
               {action.label}
             </Button>
           ))}
         </div>
 
         {/* Messages */}
-        <div className="h-[180px] overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+        <div 
+          className="h-[180px] overflow-y-auto space-y-2 pr-1 scrollbar-thin focus-visible:outline-none"
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
+          aria-label="Chat history"
+        >
           {messages.map((msg) => (
             <div
               key={msg.id}

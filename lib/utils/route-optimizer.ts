@@ -120,35 +120,5 @@ export function optimizeAllGateRouting(gates: GateOption[]): RouteRecommendation
     .sort((a, b) => a.waitMinutes - b.waitMinutes);
 }
 
-// ─── Inline Tests ────────────────────────────────────────────────────────────
+// ─── End of File ───
 
-export function runRouteOptimizerTests(): { passed: number; failed: number; results: string[] } {
-  const results: string[] = [];
-  let passed = 0;
-  let failed = 0;
-
-  function assert(condition: boolean, name: string) {
-    if (condition) { passed++; results.push(`✅ PASS: ${name}`); }
-    else { failed++; results.push(`❌ FAIL: ${name}`); }
-  }
-
-  const gates: GateOption[] = [
-    { id: 'g1', name: 'Gate A', currentQueue: 800, capacity: 100, widthMeters: 4, distanceMeters: 0, isEntryGate: true, isExitGate: false, isOpen: true },
-    { id: 'g2', name: 'Gate B', currentQueue: 200, capacity: 100, widthMeters: 4, distanceMeters: 150, isEntryGate: true, isExitGate: false, isOpen: true },
-    { id: 'g3', name: 'Gate C', currentQueue: 50,  capacity: 80,  widthMeters: 3, distanceMeters: 300, isEntryGate: true, isExitGate: false, isOpen: true },
-    { id: 'g4', name: 'Gate D', currentQueue: 0,   capacity: 80,  widthMeters: 3, distanceMeters: 400, isEntryGate: true, isExitGate: false, isOpen: false },
-  ];
-
-  const best = identifyOptimalEntryGate(gates);
-  assert(best?.id === 'g3' || best?.id === 'g2', 'identifyOptimalEntryGate: picks low-queue gate');
-  assert(best?.id !== 'g4', 'identifyOptimalEntryGate: ignores closed gate');
-
-  const wait = calculateEstimatedWaitTime(gates[0]);
-  assert(wait === 8, `calculateEstimatedWaitTime: 800/100 = 8 min`);
-
-  const rec = generateRouteRecommendation(gates[0], gates);
-  assert(rec.primaryGate.id === 'g1', 'generateRouteRecommendation: primary is correct');
-  assert(rec.alternateGate !== undefined, 'generateRouteRecommendation: has alternate');
-
-  return { passed, failed, results };
-}

@@ -1,4 +1,5 @@
 import { CloudAIAnalysis, CloudAIZoneAnalysis } from './types';
+import { GoogleCloudLogging, LogSeverity } from './services/google-cloud-logging';
 
 /**
  * Google Cloud Vision AI Integration (Simulated)
@@ -7,7 +8,7 @@ import { CloudAIAnalysis, CloudAIZoneAnalysis } from './types';
  */
 
 const MODEL_VERSION = 'crowd-vision-v2.1-gemini';
-const CLOUD_PROJECT = 'arenahsense-ai-prod';
+const CLOUD_PROJECT = process.env.NEXT_PUBLIC_GCP_PROJECT_ID || 'arenahsense-ai-prod';
 
 const VISION_ZONES = [
   { id: 'entry-north', name: 'North Entry Gate A', baseCount: 1200 },
@@ -52,7 +53,7 @@ export class CloudAIEngine {
 
     const processingTimeMs = Math.round(performance.now() - startMs);
 
-    return {
+    const analysis: CloudAIAnalysis = {
       sessionId: this.sessionId,
       modelVersion: MODEL_VERSION,
       zones,
@@ -60,6 +61,40 @@ export class CloudAIEngine {
       totalPeopleDetected: totalPeople,
       processingTimeMs,
       timestamp: Date.now(),
+    };
+
+    this.logTelemetry(analysis);
+    return analysis;
+  }
+
+  /**
+   * Logs telemetry to Google Cloud Logging
+   */
+  private static logTelemetry(analysis: CloudAIAnalysis) {
+    GoogleCloudLogging.writeLog({
+      severity: (analysis.overallRiskLevel === 'critical' ? 'CRITICAL' : 'INFO') as LogSeverity,
+      message: `Crowd analysis completed: session ${analysis.sessionId}`,
+      labels: {
+        model: analysis.modelVersion,
+        project: CLOUD_PROJECT,
+      },
+      jsonPayload: {
+        peopleCount: analysis.totalPeopleDetected,
+        latencyMs: analysis.processingTimeMs,
+        anomalyCount: analysis.zones.filter(z => z.anomalyDetected).length,
+      }
+    });
+  }
+
+  /**
+   * Returns simulated quota status for Vertex AI / Vision API
+   */
+  static getQuotaStatus() {
+    return {
+      limit: 1000,
+      remaining: 1000 - this.callCount,
+      resetTime: new Date(Date.now() + 3600000).toISOString(),
+      service: 'vision.googleapis.com',
     };
   }
 

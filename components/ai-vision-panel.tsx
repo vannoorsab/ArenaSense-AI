@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { CloudAIAnalysis, CloudAIZoneAnalysis } from '@/lib/types';
 import { CloudAIEngine } from '@/lib/cloud-ai-engine';
 import { Badge } from '@/components/ui/badge';
@@ -25,21 +25,30 @@ const ANOMALY_LABELS: Record<string, string> = {
   none:            '✅ Normal',
 };
 
-function ZoneRow({ zone }: { zone: CloudAIZoneAnalysis }) {
+/**
+ * ZoneRow Component
+ * Displays individual zone status with density and confidence metrics.
+ * Memoized to prevent unnecessary re-renders when other zones change.
+ */
+const ZoneRow = memo(function ZoneRow({ zone }: { zone: CloudAIZoneAnalysis }) {
   const hasAnomaly = zone.anomalyDetected;
   return (
-    <div className={`px-3 py-2 rounded-lg border transition-all ${
-      hasAnomaly ? 'bg-red-50 border-red-200' : 'bg-muted/30 border-transparent'
-    }`}>
+    <div 
+      className={`px-3 py-2 rounded-lg border transition-all ${
+        hasAnomaly ? 'bg-red-50 border-red-200' : 'bg-muted/30 border-transparent'
+      }`}
+      role="listitem"
+      aria-label={`${zone.zoneName}: ${zone.densityPercent}% density`}
+    >
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-1.5">
           {hasAnomaly
-            ? <AlertCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
-            : <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />}
+            ? <AlertCircle className="w-3 h-3 text-red-500 flex-shrink-0" aria-hidden="true" />
+            : <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" aria-hidden="true" />}
           <span className="text-xs font-medium">{zone.zoneName}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[10px] text-muted-foreground" aria-label="Confidence level">
             {zone.confidence}% conf
           </span>
           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
@@ -52,7 +61,14 @@ function ZoneRow({ zone }: { zone: CloudAIZoneAnalysis }) {
         </div>
       </div>
       {/* density bar */}
-      <div className="w-full h-1.5 bg-white/60 rounded-full overflow-hidden">
+      <div 
+        className="w-full h-1.5 bg-white/60 rounded-full overflow-hidden"
+        role="progressbar"
+        aria-valuenow={zone.densityPercent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Crowd density for ${zone.zoneName}`}
+      >
         <div
           className="h-full rounded-full transition-all duration-1000"
           style={{
@@ -69,7 +85,7 @@ function ZoneRow({ zone }: { zone: CloudAIZoneAnalysis }) {
       )}
     </div>
   );
-}
+});
 
 export default function AIVisionPanel({ scenario = 'normal', compact = false }: AIVisionPanelProps) {
   const [analysis, setAnalysis] = useState<CloudAIAnalysis | null>(null);
@@ -99,8 +115,17 @@ export default function AIVisionPanel({ scenario = 'normal', compact = false }: 
   const risk = analysis?.overallRiskLevel ?? 'low';
   const cfg = RISK_CONFIG[risk];
 
+  const sortedZones = useMemo(() => {
+    if (!analysis) return [];
+    return [...analysis.zones].sort((a, b) => b.densityPercent - a.densityPercent);
+  }, [analysis]);
+
   return (
-    <div className="space-y-3">
+    <div 
+      className="space-y-3" 
+      role="region" 
+      aria-label="AI Vision Analytics"
+    >
       {/* Header status bar */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1.5">
@@ -159,10 +184,14 @@ export default function AIVisionPanel({ scenario = 'normal', compact = false }: 
               <TrendingUp className="w-3 h-3" />
               Zone Analysis ({analysis.zones.length} cameras)
             </p>
-            <div className={`space-y-1.5 ${compact ? 'max-h-48 overflow-y-auto' : 'max-h-80 overflow-y-auto'}`}>
-              {analysis.zones
-                .sort((a, b) => b.densityPercent - a.densityPercent)
-                .map(zone => <ZoneRow key={zone.zoneId} zone={zone} />)}
+            <div 
+              className={`space-y-1.5 outline-none ${compact ? 'max-h-48 overflow-y-auto' : 'max-h-80 overflow-y-auto'}`}
+              role="list"
+              aria-label="Zone metrics"
+            >
+              {sortedZones.map(zone => (
+                <ZoneRow key={zone.zoneId} zone={zone} />
+              ))}
             </div>
           </div>
 

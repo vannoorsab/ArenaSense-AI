@@ -8,7 +8,6 @@ import {
   calculateEstimatedWaitTime,
   generateRouteRecommendation,
   optimizeAllGateRouting,
-  runRouteOptimizerTests,
   type GateOption,
 } from '../route-optimizer';
 
@@ -86,10 +85,4 @@ describe('optimizeAllGateRouting', () => {
   });
 });
 
-describe('runRouteOptimizerTests', () => {
-  test('all inline tests pass', () => {
-    const { failed, results } = runRouteOptimizerTests();
-    if (failed > 0) console.error(results.filter(r => r.startsWith('❌')));
-    expect(failed).toBe(0);
-  });
-});
+
