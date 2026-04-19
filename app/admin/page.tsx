@@ -120,7 +120,7 @@ export default function AdminDashboard() {
     setEmergencyActive(false);
   };
 
-  if (!simState || !systemMetrics) {
+  if (!crowdState || !systemMetrics) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center">
@@ -818,8 +818,8 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <PredictiveAnalytics
-                  predictions={simState.predictions}
-                  crowdData={simState.crowdData}
+                  predictions={crowdState.predictions}
+                  crowdData={crowdState.crowdData}
                 />
               </CardContent>
             </Card>
@@ -830,7 +830,7 @@ export default function AdminDashboard() {
                 <CardTitle className="text-base">Real-Time Crowd Trends</CardTitle>
               </CardHeader>
               <CardContent>
-                <SystemMetricsChart crowdData={simState.crowdData} />
+                <SystemMetricsChart crowdData={crowdState.crowdData} />
               </CardContent>
             </Card>
           </TabsContent>

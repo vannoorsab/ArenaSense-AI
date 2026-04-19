@@ -371,8 +371,8 @@ export default function EventStadiumPage({ params }: { params: Promise<{ id: str
                     key={scenario}
                     variant="ghost"
                     size="sm"
-                    onClick={() => simState && setSimState({ ...simState, scenarioType: scenario as typeof simState.scenarioType })}
-                    className={`text-xs ${simState?.scenarioType === scenario ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10'}`}
+                    onClick={() => crowdState && setCrowdState({ ...crowdState, scenarioType: scenario })}
+                    className={`text-xs ${crowdState?.scenarioType === scenario ? 'bg-white/20 text-white' : 'text-white/60 hover:bg-white/10'}`}
                   >
                     {scenario.replace('_', ' ').charAt(0).toUpperCase() + scenario.replace('_', ' ').slice(1)}
                   </Button>
