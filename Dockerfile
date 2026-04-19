@@ -2,15 +2,12 @@
 # ArenaSense AI — Optimized Dockerfile
 # ============================================================
 FROM node:20-slim AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN npm install -g pnpm
 
 # Stage 1: Install dependencies
 FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --no-frozen-lockfile
+COPY package.json package-lock.json* ./
+RUN npm ci
 
 # Stage 2: Build the application
 FROM base AS builder
@@ -19,7 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-RUN pnpm run build
+RUN npm run build
 
 # Stage 3: Production runtime
 FROM node:20-slim AS runner
