@@ -160,4 +160,26 @@ export class AlertService {
       this.logger.log('ERROR', 'Alert dismissal failed', { alertId, error });
     }
   }
+
+  // --- Aliases & Subscription for UI Compatibility ---
+
+  static retrieveActiveAlerts = () => this.getActiveAlerts();
+  static dismissAlert = (id: string) => this.dismiss(id);
+
+  /**
+   * Subscribe to alert changes
+   * Uses window storage event to sync across tabs
+   */
+  static subscribe(callback: (alerts: BroadcastAlert[]) => void): () => void {
+    if (typeof window === 'undefined') return () => {};
+
+    const handler = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        callback(this.getActiveAlerts());
+      }
+    };
+
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }
 }

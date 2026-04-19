@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { BroadcastAlert } from '@/lib/types';
-import { AlertSync } from '@/lib/alert-sync';
+import { AlertService } from '@/lib/services/alert-service';
 import { X, AlertTriangle, Info, Zap, ShieldAlert, Navigation } from 'lucide-react';
 
 const TYPE_CONFIG: Record<BroadcastAlert['type'], {
@@ -23,13 +23,13 @@ export default function LiveAlertBanner({ className = '' }: LiveAlertBannerProps
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   const refresh = useCallback(() => {
-    const live = AlertSync.retrieveActiveAlerts();
+    const live = AlertService.retrieveActiveAlerts();
     setAlerts(live);
   }, []);
 
   useEffect(() => {
     refresh();
-    const unsub = AlertSync.subscribe(setAlerts);
+    const unsub = AlertService.subscribe(setAlerts);
     // Periodic refresh to handle expiry
     const tick = setInterval(refresh, 3000);
     return () => { unsub(); clearInterval(tick); };
@@ -45,7 +45,7 @@ export default function LiveAlertBanner({ className = '' }: LiveAlertBannerProps
 
   const dismiss = (id: string) => {
     setDismissed(prev => new Set([...prev, id]));
-    AlertSync.dismissAlert(id);
+    AlertService.dismissAlert(id);
   };
 
   return (
