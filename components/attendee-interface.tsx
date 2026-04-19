@@ -13,14 +13,16 @@ import AlertsPanel from './alerts-panel';
 import RecommendationCard from './recommendation-card';
 import AIAssistant from './ai-assistant';
 import PredictiveAlerts from './predictive-alerts';
-import { CrowdSimulator, SimulationState } from '@/lib/crowd-simulator';
-import { AIDecisionEngine } from '@/lib/ai-engine';
+import { CrowdService, type CrowdState } from '@/lib/services/crowd-service';
+import { AlertService } from '@/lib/services/alert-service';
+import { EmergencyService } from '@/lib/services/emergency-service';
+import { GoogleCloudLogging } from '@/lib/services/google-cloud-logging';
 import { User, AIRecommendation, AnomalyAlert } from '@/lib/types';
 
 type Scenario = 'normal' | 'entry_rush' | 'halftime' | 'exit_surge';
 
 export default function AttendeeInterface() {
-  const [simState, setSimState] = useState<SimulationState | null>(null);
+  const [crowdState, setCrowdState] = useState<CrowdState | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [recommendation, setRecommendation] = useState<AIRecommendation | null>(null);
   const [alerts, setAlerts] = useState<AnomalyAlert[]>([]);
@@ -30,153 +32,122 @@ export default function AttendeeInterface() {
   const [scenario, setScenario] = useState<Scenario>('normal');
   const [showScenarioMenu, setShowScenarioMenu] = useState(false);
 
-  // Initialize simulation
+  // Initialize
   useEffect(() => {
-    const initial = CrowdSimulator.initializeSimulation(45000);
-    setSimState(initial);
-
+    setCrowdState(CrowdService.initialize(45000));
     setCurrentUser({
-      id: 'user-1',
+      id: 'user-vip',
       currentZone: 'seating-lower-north',
       location: { x: 50, y: 30, zone: 'seating-lower-north' },
-      preferences: {
-        avoidCrowds: true,
-        preferQuickestRoute: false,
-        accessibility: false,
-      },
+      preferences: { avoidCrowds: true, preferQuickestRoute: true, accessibility: false },
     });
   }, []);
 
-  // Main simulation loop
+  // Main Loop
   useEffect(() => {
-    if (!simState || !currentUser || !isRunning) return;
+    if (!crowdState || !currentUser || !isRunning) return;
 
     const interval = setInterval(() => {
-      setSimState((prev) => {
+      setCrowdState(prev => {
         if (!prev) return prev;
+        const next = CrowdService.processStep(prev, scenario);
+        
+        // Log telemetry to Google Cloud
+        GoogleCloudLogging.info('Crowd Telemetry Updated', {
+          timestamp: next.timestamp,
+          scenario,
+          activeAlerts: AlertService.getActiveAlerts().length,
+          avgDensity: Array.from(next.crowdData.values()).reduce((s, d) => s + d.density, 0) / next.crowdData.size
+        });
 
-        const newState = CrowdSimulator.step(prev, scenario);
-        const newAlerts = AIDecisionEngine.detectAnomalies(newState.crowdData, newState.predictions);
-        setAlerts(newAlerts);
+        // Auto-trigger AI alerts
+        const currentZoneCrowd = next.crowdData.get(currentUser.currentZone);
+        if (currentZoneCrowd) {
+          AlertService.triggerAiAlert(currentZoneCrowd.zone, currentZoneCrowd.density);
+        }
 
-        const rec = AIDecisionEngine.generateRecommendation(
-          currentUser,
-          newState.crowdData,
-          newState.predictions,
-          newState.queues,
-          newAlerts,
-          selectedZone !== currentUser.currentZone ? selectedZone : undefined
-        );
-        setRecommendation(rec);
-
-        return newState;
+        return next;
       });
-    }, 1000);
+    }, 2000);
 
     return () => clearInterval(interval);
-  }, [isRunning, currentUser, selectedZone, scenario]);
-
-  // Auto-activate emergency mode on critical alerts
-  useEffect(() => {
-    const criticalAlerts = alerts.filter(a => a.severity === 'critical');
-    if (criticalAlerts.length > 0 && !emergencyMode) {
-      // Don't auto-activate, just warn
-    }
-  }, [alerts]);
+  }, [isRunning, currentUser, scenario, crowdState === null]);
 
   const handleScenarioChange = (newScenario: Scenario) => {
     setScenario(newScenario);
     setShowScenarioMenu(false);
-    // Reset simulation with new scenario
-    const initial = CrowdSimulator.initializeSimulation(45000);
-    setSimState(initial);
+    setCrowdState(CrowdService.initialize(45000));
   };
 
   const handleReset = () => {
-    const initial = CrowdSimulator.initializeSimulation(45000);
-    setSimState(initial);
-    setSelectedZone('seating-lower-north');
+    setCrowdState(CrowdService.initialize(45000));
     setEmergencyMode(false);
     setScenario('normal');
-    setCurrentUser({
-      id: 'user-1',
-      currentZone: 'seating-lower-north',
-      location: { x: 50, y: 30, zone: 'seating-lower-north' },
-      preferences: {
-        avoidCrowds: true,
-        preferQuickestRoute: false,
-        accessibility: false,
-      },
-    });
   };
 
-  if (!simState || !currentUser) {
+  if (!crowdState || !currentUser) {
     return (
-      <div className="flex items-center justify-center h-screen bg-background">
+      <div className="flex items-center justify-center h-screen bg-background text-foreground">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading Stadium Navigator...</p>
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm font-medium animate-pulse">Establishing Secure Connection to ArenaSense AI...</p>
         </div>
       </div>
     );
   }
 
-  const currentCrowd = simState.crowdData.get(currentUser.currentZone);
-  const systemMetrics = AIDecisionEngine.generateSystemMetrics(simState.crowdData, alerts);
+  const currentCrowd = crowdState.crowdData.get(currentUser.currentZone);
   const dangerZones = alerts.filter(a => a.severity === 'critical' || a.severity === 'high').map(a => a.zone);
 
   const scenarioLabels: Record<Scenario, string> = {
-    normal: 'Normal',
-    entry_rush: 'Entry Rush',
-    halftime: 'Halftime',
-    exit_surge: 'Exit Rush',
+    normal: 'Normal Operations',
+    entry_rush: 'Entry Rush Level 3',
+    halftime: 'Halftime Peak',
+    exit_surge: 'Exit Surge Alert',
   };
 
   return (
-    <div className={`min-h-screen bg-background text-foreground ${emergencyMode ? 'emergency-active' : ''}`}>
+    <div className={`min-h-screen bg-background text-foreground transition-all duration-500 ${emergencyMode ? 'bg-red-950/20' : ''}`}>
       {/* Emergency Mode Global Banner */}
       {emergencyMode && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-destructive text-destructive-foreground py-2 px-4 text-center animate-pulse">
-          <div className="flex items-center justify-center gap-2 text-sm font-semibold">
-            <ShieldAlert className="w-4 h-4" />
-            EMERGENCY MODE ACTIVE - Follow evacuation routes shown on map
+        <div className="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white py-3 px-4 text-center shadow-xl border-b-2 border-red-700">
+          <div className="flex items-center justify-center gap-3 text-sm font-black uppercase tracking-tighter">
+            <ShieldAlert className="w-5 h-5 animate-bounce" />
+            CRITICAL EMERGENCY: FOLLOW EVACUATION ROUTES IMMEDIATELY
             <Button
               size="sm"
-              variant="secondary"
+              variant="outline"
               onClick={() => setEmergencyMode(false)}
-              className="ml-4 h-6 text-xs"
+              className="ml-6 bg-white text-red-600 border-none h-7 px-4 hover:bg-white/90"
             >
-              Deactivate
+              System Override
             </Button>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <header className={`border-b border-border bg-card sticky ${emergencyMode ? 'top-10' : 'top-0'} z-40`}>
-        <div className="max-w-7xl mx-auto px-4 py-3">
+      <header className={`border-b border-border bg-card/80 backdrop-blur-md sticky ${emergencyMode ? 'top-12' : 'top-0'} z-40 shadow-sm transition-all duration-300`}>
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold">ArenaSense AI Navigator</h1>
-              <p className="text-xs text-muted-foreground">AI-Powered Crowd Intelligence</p>
-            </div>
             <div className="flex items-center gap-3">
-              {/* Status Badge */}
-              <div className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
-                systemMetrics.emergencyStatus === 'critical'
-                  ? 'bg-red-100 text-destructive'
-                  : systemMetrics.emergencyStatus === 'alert'
-                    ? 'bg-orange-100 text-accent'
-                    : 'bg-green-100 text-green-700'
-              }`}>
-                {systemMetrics.totalAttendees.toLocaleString()} Attendees
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-indigo-500/20 shadow-lg">
+                <Users className="w-5 h-5 text-primary-foreground" />
               </div>
-              
-              {/* Admin Link */}
+              <div>
+                <h1 className="text-lg font-black tracking-tight leading-none">ARENASENSE <span className="text-primary italic">AI</span></h1>
+                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase mt-0.5">Production Monitoring Node</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Badge variant="outline" className="px-3 py-1 bg-green-500/10 text-green-600 border-green-500/20 font-bold">
+                <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse" />
+                SYSTEM HEALTH: OPTIMAL
+              </Badge>
               <Link href="/admin">
-                <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
-                  <Settings className="w-3.5 h-3.5" />
-                  Admin
+                <Button variant="outline" size="sm" className="h-8 font-bold border-2 hover:bg-primary hover:text-white transition-all">
+                  <Settings className="w-3.5 h-3.5 mr-2" />
+                  ADMIN PANEL
                 </Button>
               </Link>
             </div>
@@ -184,35 +155,35 @@ export default function AttendeeInterface() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Main Column - Heatmap & Alerts */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Heatmap Card */}
-            <Card>
-              <CardHeader className="pb-2">
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card className="border-2 shadow-sm overflow-hidden">
+              <CardHeader className="bg-muted/30 pb-4 border-b">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-base">Live Crowd Heatmap</CardTitle>
-                    <CardDescription className="text-xs">Real-time density by zone</CardDescription>
+                    <CardTitle className="text-sm font-black flex items-center gap-2">
+                       <MapPin className="w-4 h-4 text-primary" />
+                       REAL-TIME STADIUM HEATMAP
+                    </CardTitle>
+                    <CardDescription className="text-xs font-medium">Vision AI analyzed zone density metrics</CardDescription>
                   </div>
-                  {/* Emergency Button - WOW Feature */}
                   <Button
                     variant={emergencyMode ? 'destructive' : 'outline'}
                     size="sm"
                     onClick={() => setEmergencyMode(!emergencyMode)}
-                    className="gap-1.5 h-8 shadow-sm transition-all hover:scale-105"
-                    aria-label={emergencyMode ? 'Exit Emergency Evacuation Mode' : 'Activate Emergency Evacuation Support'}
-                    title="Activate Emergency Mode"
+                    className="gap-2 h-9 font-black border-2 shadow-lg transition-all active:scale-95"
+                    aria-label={emergencyMode ? 'Terminate emergency mode' : 'Trigger emergency evacuation protocol'}
+                    aria-pressed={emergencyMode}
                   >
                     <ShieldAlert className={`w-4 h-4 ${emergencyMode ? 'animate-pulse' : ''}`} />
-                    {emergencyMode ? 'EXIT EMERGENCY' : 'EMERGENCY MODE'}
+                    {emergencyMode ? 'TERMINATE EMERGENCY' : 'TRIGGER EMERGENCY'}
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <CrowdHeatmap
-                  crowdData={simState.crowdData}
+                  crowdData={crowdState.crowdData}
                   currentZone={currentUser.currentZone}
                   onZoneSelect={(zoneId) => {
                     setSelectedZone(zoneId);
@@ -224,74 +195,52 @@ export default function AttendeeInterface() {
               </CardContent>
             </Card>
 
-            {/* Predictive Alerts */}
             <PredictiveAlerts 
-              predictions={simState.predictions} 
+              predictions={crowdState.predictions} 
               currentZone={currentUser.currentZone}
             />
 
-            {/* Active Alerts */}
-            {alerts.length > 0 && (
-              <Card className={alerts.some(a => a.severity === 'critical') ? 'border-destructive' : 'border-accent'}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <AlertTriangle className={`w-4 h-4 ${
-                      alerts.some(a => a.severity === 'critical') ? 'text-destructive' : 'text-accent'
-                    }`} />
-                    Active Alerts ({alerts.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <AlertsPanel alerts={alerts} compact />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Simulation Controls */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Simulation Controls</CardTitle>
+            <Card className="border-2 shadow-sm">
+              <CardHeader className="bg-muted/10 pb-3">
+                <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Operational Dynamics</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Play/Pause */}
+              <CardContent className="pt-2">
+                <div className="flex flex-wrap items-center gap-3">
                   <Button
                     variant={isRunning ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setIsRunning(!isRunning)}
-                    className="gap-1.5 h-8"
-                    aria-label={isRunning ? 'Pause crowd simulation' : 'Start crowd simulation'}
+                    className="gap-2 font-bold px-4"
                   >
-                    {isRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                    {isRunning ? 'Pause' : 'Play'}
+                    {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    {isRunning ? 'FREEZE ENGINE' : 'RESUME ENGINE'}
                   </Button>
 
-                  {/* Reset */}
-                  <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5 h-8">
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    Reset
+                  <Button variant="outline" size="sm" onClick={handleReset} className="gap-2 font-bold px-4 border-2">
+                    <RotateCcw className="w-4 h-4" />
+                    RESTART
                   </Button>
 
-                  {/* Scenario Selector */}
                   <div className="relative">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setShowScenarioMenu(!showScenarioMenu)}
-                      className="gap-1.5 h-8"
+                      className="gap-2 font-bold border-2 bg-background"
                     >
-                      Scenario: {scenarioLabels[scenario]}
-                      <ChevronDown className="w-3.5 h-3.5" />
+                      <span>Scenario:</span>
+                      <span className="text-primary italic underline-offset-4 decoration-2">{scenarioLabels[scenario]}</span>
+                      <ChevronDown className="w-4 h-4" />
                     </Button>
                     
                     {showScenarioMenu && (
-                      <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-10 min-w-[140px]">
+                      <div className="absolute top-full left-0 mt-2 bg-card border-2 border-border rounded-xl shadow-2xl z-50 min-w-[200px] overflow-hidden animate-in fade-in zoom-in duration-200">
                         {(Object.keys(scenarioLabels) as Scenario[]).map((s) => (
                           <button
                             key={s}
                             onClick={() => handleScenarioChange(s)}
-                            className={`w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                              s === scenario ? 'bg-muted font-semibold' : ''
+                            className={`w-full text-left px-4 py-3 text-xs font-bold transition-all hover:bg-primary hover:text-white ${
+                              s === scenario ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
                             }`}
                           >
                             {scenarioLabels[s]}
@@ -305,59 +254,45 @@ export default function AttendeeInterface() {
             </Card>
           </div>
 
-          {/* Right Sidebar */}
-          <div className="space-y-4">
-            {/* Current Location Card */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Your Location</CardTitle>
+          <div className="space-y-6">
+            <Card className="border-2 bg-primary/5 shadow-inner">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-sm font-black">USER TELEMETRY</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MapPin className="w-4 h-4 text-primary" />
+              <CardContent className="pt-4 space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                    <MapPin className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">
-                      {currentUser.currentZone.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                    <p className="text-sm font-black uppercase tracking-tight">
+                      {currentUser.currentZone.replace(/-/g, ' ')}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      Density: {currentCrowd?.density.toFixed(0)}% · {currentCrowd?.currentCount.toLocaleString()} people
+                    <p className="text-[11px] font-bold text-muted-foreground">
+                      Density Impact: {Math.round(currentCrowd?.density || 0)}%
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>Trend:</span>
-                  </div>
-                  <span className={`font-medium ${
-                    currentCrowd?.trend === 'increasing' ? 'text-accent' :
-                    currentCrowd?.trend === 'decreasing' ? 'text-green-600' : 'text-muted-foreground'
+                <div className="pt-2 border-t border-primary/10 flex items-center justify-between">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Zone Status</span>
+                  <Badge className={`font-black tracking-tighter ${
+                    currentCrowd?.trend === 'increasing' ? 'bg-orange-500' : 'bg-green-600'
                   }`}>
-                    {currentCrowd?.trend === 'increasing' ? 'Filling Up' :
-                     currentCrowd?.trend === 'decreasing' ? 'Emptying' : 'Stable'}
-                  </span>
+                    {currentCrowd?.trend === 'increasing' ? 'CONGESTING' : 'STABLE'}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Smart Recommendation */}
             {recommendation && <RecommendationCard recommendation={recommendation} />}
 
-            {/* AI Assistant */}
             <AIAssistant
               currentZone={currentUser.currentZone}
               crowdDensity={currentCrowd?.density || 50}
               onNavigate={(zone) => {
                 setSelectedZone(zone);
                 setCurrentUser({ ...currentUser, currentZone: zone });
-              }}
-              onQuickAction={(action) => {
-                if (action === 'exit' && emergencyMode) {
-                  // Could trigger specific navigation
-                }
               }}
             />
           </div>

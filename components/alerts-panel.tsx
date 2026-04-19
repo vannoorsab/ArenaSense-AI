@@ -55,14 +55,18 @@ export default function AlertsPanel({ alerts, compact = false }: AlertsPanelProp
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="region" aria-label="System Alerts" aria-live="polite">
       {sortedAlerts.slice(0, displayCount).map((alert) => {
         const SeverityIcon = severityIcons[alert.severity];
 
         return (
-          <div key={alert.id} className={`border rounded-lg p-3 ${severityColors[alert.severity]}`}>
+          <div 
+            key={alert.id} 
+            className={`border rounded-lg p-3 ${severityColors[alert.severity]}`}
+            role={alert.severity === 'critical' ? 'alert' : 'status'}
+          >
             <div className="flex items-start gap-3">
-              <SeverityIcon className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <SeverityIcon className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
               <div className="flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div>

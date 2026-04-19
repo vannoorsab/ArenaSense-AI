@@ -1,7 +1,7 @@
 'use client';
 
 import { EvacuationRoute, CrowdData } from '@/lib/types';
-import { DEFAULT_VENUE } from '@/lib/venue-schema';
+import { DEFAULT_VENUE } from '@/lib/data/venue-schema';
 
 interface EvacuationMapProps {
   routes: EvacuationRoute[];

@@ -29,11 +29,12 @@ import {
   Zap,
   Shield,
 } from 'lucide-react';
-import { getEventById, formatEventDate, formatEventTime } from '@/lib/events-data';
-import { CrowdSimulator, type SimulationState } from '@/lib/crowd-simulator';
-import { AIDecisionEngine, type AIRecommendation } from '@/lib/ai-engine';
-import { DEFAULT_VENUE } from '@/lib/venue-schema';
+import { getEventById, formatEventDate, formatEventTime } from '@/lib/data/events-data';
+import { CrowdService, type CrowdState } from '@/lib/services/crowd-service';
+import { DEFAULT_VENUE } from '@/lib/data/venue-schema';
 import { VenueZone, User, CrowdData, SportEvent } from '@/lib/types';
+import { AlertService } from '@/lib/services/alert-service';
+import type { AIRecommendation } from '@/lib/types';
 import dynamic from 'next/dynamic';
 import AIAssistant from '@/components/ai-assistant';
 
@@ -191,12 +192,10 @@ export default function EventStadiumPage({ params }: { params: Promise<{ id: str
   const router = useRouter();
   
   const [event, setEvent] = useState<SportEvent | null>(null);
-  const [simState, setSimState] = useState<SimulationState | null>(null);
-  const [crowdData, setCrowdData] = useState<Map<string, CrowdData>>(new Map());
+  const [crowdState, setCrowdState] = useState<CrowdState | null>(null);
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
   const [currentZone, setCurrentZone] = useState<string>('main-entrance');
   const [isRunning, setIsRunning] = useState(true);
-  const [recommendation, setRecommendation] = useState<AIRecommendation | null>(null);
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
 
   // Initialize
@@ -204,66 +203,39 @@ export default function EventStadiumPage({ params }: { params: Promise<{ id: str
     const foundEvent = getEventById(id);
     if (foundEvent) {
       setEvent(foundEvent);
-      const initialState = CrowdSimulator.initializeSimulation(foundEvent.registeredCount);
-      const scenario = foundEvent.status === 'live' ? 'halftime' : 'entry_rush';
-      initialState.scenarioType = scenario;
-      setSimState(initialState);
-      setCrowdData(initialState.crowdData);
+      setCrowdState(CrowdService.initialize(foundEvent.registeredCount));
     }
   }, [id]);
 
   // Simulation loop
   useEffect(() => {
-    if (!simState || !isRunning) return;
+    if (!crowdState || !isRunning) return;
 
     const interval = setInterval(() => {
-      const newState = CrowdSimulator.step(simState, simState.scenarioType);
-      setSimState(newState);
-      setCrowdData(new Map(newState.crowdData));
-    }, 1000);
+      setCrowdState(prev => prev ? CrowdService.processStep(prev, prev.scenarioType) : prev);
+    }, 2000);
 
     return () => clearInterval(interval);
-  }, [simState, isRunning]);
-
-  // Update recommendations
-  useEffect(() => {
-    if (!event || crowdData.size === 0) return;
-
-    const mockUser: User = {
-      id: 'event-attendee',
-      currentZone,
-      location: { x: 0, y: 0, zone: currentZone },
-      preferences: {
-        avoidCrowds: true,
-        preferQuickestRoute: true,
-        accessibility: false,
-      },
-    };
-
-    const rec = AIDecisionEngine.generateRecommendation(mockUser, crowdData, [], [], []);
-    setRecommendation(rec);
-  }, [currentZone, crowdData, event]);
+  }, [isRunning, crowdState === null]);
 
   const handleReset = useCallback(() => {
     if (event) {
-      const initialState = CrowdSimulator.initializeSimulation(event.registeredCount);
-      initialState.scenarioType = 'entry_rush';
-      setSimState(initialState);
-      setCrowdData(initialState.crowdData);
+      setCrowdState(CrowdService.initialize(event.registeredCount));
     }
   }, [event]);
 
-  if (!event) {
+  if (!event || !crowdState) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <Spinner className="mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading stadium experience...</p>
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Calibrating Venue AI...</p>
         </div>
       </div>
     );
   }
 
+  const crowdData = crowdState.crowdData;
   const totalPeople = Array.from(crowdData.values()).reduce((sum, d) => sum + d.currentCount, 0);
   const avgDensity = crowdData.size > 0
     ? Array.from(crowdData.values()).reduce((sum, d) => sum + d.density, 0) / crowdData.size

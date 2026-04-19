@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { CloudAIAnalysis, CloudAIZoneAnalysis } from '@/lib/types';
-import { CloudAIEngine } from '@/lib/cloud-ai-engine';
+import { CloudAIEngine } from '@/lib/services/cloud-ai-engine';
 import { Badge } from '@/components/ui/badge';
 import { Brain, Wifi, AlertCircle, CheckCircle2, Loader2, TrendingUp } from 'lucide-react';
 

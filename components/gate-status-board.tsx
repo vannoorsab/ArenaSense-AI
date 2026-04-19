@@ -9,8 +9,8 @@ import { useState, useEffect } from 'react';
 import { DoorOpen, DoorClosed, ArrowRight, Clock, Star, AlertTriangle, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { GateManager, type GateData } from '@/lib/gate-manager';
-import { calculateEstimatedWaitTime, generateRouteRecommendation, type GateOption } from '@/lib/utils/route-optimizer';
+import { GateService } from '@/lib/services/gate-service';
+import type { GateData } from '@/lib/types';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -68,32 +68,10 @@ export default function GateStatusBoard({
 
   useEffect(() => {
     function update() {
-      // GateManager.getGates returns initialized gates for the scenario
-      const all = GateManager.getGates(scenario as any);
-      const filtered = gateType === 'all' ? all
-        : all.filter(g => g.type === gateType);
-      setGates(filtered);
-
-      // Find recommended entry gate
-      const entryGates: GateOption[] = all
-        .filter(g => g.type === 'entry' && g.status !== 'closed')
-        .map(g => ({
-          id: g.id,
-          name: g.name,
-          currentQueue: Math.round(g.density * 500),
-          capacity: 100,
-          widthMeters: 4,
-          distanceMeters: 0,
-          isEntryGate: true,
-          isExitGate: false,
-          isOpen: g.status !== 'closed',
-        }));
-
-      if (entryGates.length > 0) {
-        const rec = generateRouteRecommendation(entryGates[0], entryGates);
-        setRecommended(rec.alternateGate?.name ?? entryGates[0].name);
-      }
-
+      setGates(prev => {
+        const updated = GateService.getUpdatedGates(prev.length > 0 ? prev : null, scenario);
+        return gateType === 'all' ? updated : updated.filter(g => g.type === gateType);
+      });
       setLastUpdated(new Date());
     }
 
@@ -101,6 +79,8 @@ export default function GateStatusBoard({
     const interval = setInterval(update, refreshMs);
     return () => clearInterval(interval);
   }, [scenario, gateType, refreshMs]);
+
+  const recommended = gates.find(g => !g.suggestion && g.status === 'low')?.name;
 
   return (
     <div className="space-y-3" role="region" aria-label="Gate Status Board" aria-live="polite">
@@ -122,87 +102,69 @@ export default function GateStatusBoard({
 
       {/* Gate Grid */}
       <div
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"
+        className="grid grid-cols-2 sm:grid-cols-4 gap-3"
         role="list"
-        aria-label={`${gateType === 'all' ? 'All' : gateType} gates`}
+        aria-label={`${gateType === 'all' ? 'All' : gateType} stadium gates`}
       >
-        {gates.map((gate, idx) => {
+        {gates.map((gate) => {
           const cfg = STATUS_CONFIG[gate.status] ?? STATUS_CONFIG.low;
           const isRecommended = gate.name === recommended;
-          const waitMins = calculateEstimatedWaitTime({
-            id: gate.id,
-            name: gate.name,
-            currentQueue: Math.round(gate.density * 500),
-            capacity: 100,
-            widthMeters: 4,
-            distanceMeters: 0,
-            isEntryGate: gate.type === 'entry',
-            isExitGate: gate.type === 'exit',
-            isOpen: gate.status !== 'closed',
-          });
-
+          
           return (
             <div
               key={gate.id}
               role="listitem"
               tabIndex={0}
-              aria-label={`${gate.name}: ${cfg.label} crowd, wait ${waitMins} minutes${isRecommended ? ', recommended gate' : ''}`}
-              className={`relative rounded-lg border p-2.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-yellow-500
+              aria-label={`${gate.name}: Status ${cfg.label}, Wait ${gate.waitTimeMinutes} minutes. ${gate.suggestion || ''}`}
+              className={`relative rounded-xl border p-4 transition-all duration-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary
                 ${cfg.bg}
-                ${isRecommended ? 'ring-2 ring-yellow-500 ring-offset-1' : ''}
+                ${isRecommended ? 'ring-2 ring-indigo-500' : ''}
               `}
             >
-              {/* Recommended badge */}
-              {isRecommended && (
-                <div className="absolute -top-1.5 -right-1.5 bg-yellow-500 rounded-full p-0.5" aria-hidden="true">
-                  <Star className="w-2.5 h-2.5 text-yellow-900" />
-                </div>
-              )}
-
-              {/* Gate icon + status */}
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1">
-                  {gate.status === 'closed'
-                    ? <DoorClosed className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                    : <DoorOpen className="w-4 h-4 text-foreground/70" aria-hidden="true" />
-                  }
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                    {gate.type}
-                  </span>
+              {/* Gate Header */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex gap-2">
+                  <div className={`p-1 rounded ${gate.status === 'closed' ? 'bg-muted' : 'bg-background/50'}`}>
+                    {gate.status === 'closed'
+                      ? <DoorClosed className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                      : <DoorOpen className="w-4 h-4 text-primary" aria-hidden="true" />
+                    }
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase leading-none">{gate.type}</p>
+                    <p className="font-bold text-xs mt-0.5">{gate.name}</p>
+                  </div>
                 </div>
                 <div className={`w-2 h-2 rounded-full ${cfg.dot}`} aria-hidden="true" />
               </div>
 
-              {/* Gate name */}
-              <p className="font-bold text-[11px] leading-tight mb-1.5 line-clamp-2">{gate.name}</p>
-
-              {/* Density bar */}
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-1.5" role="progressbar" aria-valuenow={Math.round(gate.density * 100)} aria-valuemin={0} aria-valuemax={100}>
+              {/* Density Progress */}
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-3" role="progressbar" aria-valuenow={Math.round(gate.density)} aria-valuemin={0} aria-valuemax={100}>
                 <div
-                  className={`h-full rounded-full transition-all duration-700 ${cfg.bar}`}
-                  style={{ width: `${Math.min(100, gate.density * 100)}%` }}
+                  className={`h-full rounded-full transition-all duration-1000 ${cfg.bar}`}
+                  style={{ width: `${gate.density}%` }}
                 />
               </div>
 
-              {/* Stats */}
+              {/* Stats Footer */}
               <div className="flex items-center justify-between">
-                <span className={`text-[9px] font-semibold px-1 py-0.5 rounded ${cfg.badge}`}>
+                <Badge variant="outline" className={`text-[10px] ${cfg.badge}`}>
                   {cfg.label}
-                </span>
+                </Badge>
                 {gate.status !== 'closed' && (
-                  <div className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
-                    <Clock className="w-2.5 h-2.5" aria-hidden="true" />
-                    <span>{waitMins}m</span>
+                  <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+                    <Clock className="w-3 h-3" aria-hidden="true" />
+                    <span>{gate.waitTimeMinutes}m</span>
                   </div>
                 )}
               </div>
 
-              {/* Suggestion if available */}
+              {/* AI Suggestion */}
               {gate.suggestion && (
-                <p className="mt-1.5 text-[9px] text-muted-foreground flex items-start gap-0.5">
-                  <ArrowRight className="w-2.5 h-2.5 flex-shrink-0 mt-0.5 text-yellow-500" aria-hidden="true" />
-                  <span className="line-clamp-2">{gate.suggestion}</span>
-                </p>
+                <div className="mt-2 bg-yellow-500/10 p-1.5 rounded text-[9px] text-yellow-700 dark:text-yellow-400 font-medium animate-pulse">
+                  <ArrowRight className="w-3 h-3 inline mr-1" aria-hidden="true" />
+                  {gate.suggestion}
+                </div>
               )}
             </div>
           );

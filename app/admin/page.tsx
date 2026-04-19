@@ -17,12 +17,12 @@ import PredictiveAnalytics from '@/components/predictive-analytics';
 import CrowdHeatmap from '@/components/crowd-heatmap';
 import GateCrowdPanel from '@/components/gate-crowd-panel';
 import AIVisionPanel from '@/components/ai-vision-panel';
-import { CrowdSimulator, SimulationState } from '@/lib/crowd-simulator';
-import { AIDecisionEngine } from '@/lib/ai-engine';
-import { AnomalyAlert, SystemMetrics } from '@/lib/types';
-import { AlertSync } from '@/lib/alert-sync';
-import { EVENTS, formatEventDate, getSportIcon, type SportEvent } from '@/lib/events-data';
-import { CSK_MATCHES, formatMatchDate } from '@/lib/csk-matches';
+import { CrowdService, type CrowdState } from '@/lib/services/crowd-service';
+import { AlertService } from '@/lib/services/alert-service';
+import { EmergencyService } from '@/lib/services/emergency-service';
+import { getEventById, EVENTS, formatEventDate, getSportIcon } from '@/lib/data/events-data';
+import { CSK_MATCHES, formatMatchDate } from '@/lib/data/csk-matches';
+import { SystemMetrics, AnomalyAlert } from '@/lib/types';
 
 type Scenario = 'normal' | 'entry_rush' | 'halftime' | 'exit_surge';
 
@@ -55,7 +55,7 @@ const ALL_EVENTS = [
 ];
 
 export default function AdminDashboard() {
-  const [simState, setSimState] = useState<SimulationState | null>(null);
+  const [crowdState, setCrowdState] = useState<CrowdState | null>(null);
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
   const [alerts, setAlerts] = useState<AnomalyAlert[]>([]);
   const [isRunning, setIsRunning] = useState(true);
@@ -68,56 +68,54 @@ export default function AdminDashboard() {
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
 
   useEffect(() => {
-    const initial = CrowdSimulator.initializeSimulation(45000);
-    setSimState(initial);
+    setCrowdState(CrowdService.initialize(45000));
   }, []);
 
   useEffect(() => {
-    if (!simState || !isRunning) return;
+    if (!crowdState || !isRunning) return;
 
     const interval = setInterval(() => {
-      setSimState((prev) => {
+      setCrowdState((prev) => {
         if (!prev) return prev;
+        const next = CrowdService.processStep(prev, scenario);
+        
+        // Compute metrics
+        const totalPeople = Array.from(next.crowdData.values()).reduce((s, z) => s + z.currentCount, 0);
+        const avgDensity = Array.from(next.crowdData.values()).reduce((s, z) => s + z.density, 0) / next.crowdData.size;
+        
+        setSystemMetrics({
+          totalAttendees: totalPeople,
+          averageDensity: avgDensity,
+          criticalZones: [],
+          activePredictions: next.predictions.length,
+          emergencyStatus: emergencyActive ? 'critical' : 'normal',
+          lastUpdate: Date.now(),
+        });
 
-        const newState = CrowdSimulator.step(prev, scenario);
-        const newAlerts = AIDecisionEngine.detectAnomalies(newState.crowdData, newState.predictions);
-        const metrics = AIDecisionEngine.generateSystemMetrics(newState.crowdData, newAlerts);
-
-        setAlerts(newAlerts);
-        setSystemMetrics(metrics);
-
-        return newState;
+        return next;
       });
-    }, 1000);
+    }, 2000);
 
     return () => clearInterval(interval);
-  }, [isRunning, scenario, simState]);
+  }, [isRunning, scenario, crowdState === null, emergencyActive]);
 
   const handleBroadcast = () => {
     if (broadcastMessage.trim()) {
-      AlertSync.broadcastSystemAlert(broadcastMessage.trim(), 'warning', { expiryMs: 60_000 });
+      AlertService.broadcast(broadcastMessage.trim(), 'warning');
       setBroadcastSent(true);
       setTimeout(() => setBroadcastSent(false), 3000);
       setBroadcastMessage('');
     }
   };
 
-  const handlePresetAlert = (preset: keyof typeof AlertSync.presets) => {
-    AlertSync.presets[preset]();
-    setBroadcastSent(true);
-    setTimeout(() => setBroadcastSent(false), 3000);
-  };
-
   const handleScenarioChange = (newScenario: Scenario) => {
     setScenario(newScenario);
     setShowScenarioMenu(false);
-    const initial = CrowdSimulator.initializeSimulation(45000);
-    setSimState(initial);
+    setCrowdState(CrowdService.initialize(45000));
   };
 
   const handleReset = () => {
-    const initial = CrowdSimulator.initializeSimulation(45000);
-    setSimState(initial);
+    setCrowdState(CrowdService.initialize(45000));
     setScenario('normal');
     setEmergencyActive(false);
   };
@@ -349,7 +347,7 @@ export default function AdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     <CrowdHeatmap
-                      crowdData={simState.crowdData}
+                      crowdData={crowdState.crowdData}
                       currentZone=""
                       onZoneSelect={() => {}}
                       emergencyMode={emergencyActive}
@@ -357,14 +355,14 @@ export default function AdminDashboard() {
                     />
                   </CardContent>
                 </Card>
-
+ 
                 {/* Real-Time Metrics */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">Real-Time Crowd Trends</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <SystemMetricsChart crowdData={simState.crowdData} />
+                    <SystemMetricsChart crowdData={crowdState.crowdData} />
                   </CardContent>
                 </Card>
               </div>

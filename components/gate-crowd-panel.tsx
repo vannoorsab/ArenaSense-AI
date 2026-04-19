@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { GateData, GateSuggestion } from '@/lib/types';
-import { GateManager } from '@/lib/gate-manager';
+import { GateService } from '@/lib/services/gate-service';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -131,16 +131,16 @@ export default function GateCrowdPanel({ scenario = 'normal', compact = false }:
   const [suggestions, setSuggestions] = useState<GateSuggestion[]>([]);
 
   useEffect(() => {
-    const initial = GateManager.initializeGates(scenario);
+    const initial = GateService.getUpdatedGates(null, scenario);
     setGates(initial);
-    setSuggestions(GateManager.generateSuggestions(initial));
+    setSuggestions(GateService.generateSuggestions(initial));
   }, [scenario]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setGates(prev => {
-        const updated = GateManager.updateGateStateTransitions(prev, scenario);
-        setSuggestions(GateManager.generateSuggestions(updated));
+        const updated = GateService.getUpdatedGates(prev, scenario);
+        setSuggestions(GateService.generateSuggestions(updated));
         return updated;
       });
     }, 2000);

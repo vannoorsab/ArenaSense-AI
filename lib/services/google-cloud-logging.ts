@@ -43,6 +43,10 @@ export class GoogleCloudLogging {
     // await fetch(`https://logging.googleapis.com/v2/entries:write`, { ... })
   }
 
+  log(severity: LogSeverity, message: string, payload?: any) {
+    GoogleCloudLogging.writeLog({ severity, message, jsonPayload: payload });
+  }
+
   static info(message: string, payload?: any) {
     this.writeLog({ severity: 'INFO', message, jsonPayload: payload });
   }
@@ -53,5 +57,9 @@ export class GoogleCloudLogging {
 
   static error(message: string, payload?: any) {
     this.writeLog({ severity: 'ERROR', message, jsonPayload: payload });
+  }
+
+  static critical(message: string, payload?: any) {
+    this.writeLog({ severity: 'CRITICAL', message, jsonPayload: payload });
   }
 }

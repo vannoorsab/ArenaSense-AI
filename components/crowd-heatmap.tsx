@@ -1,7 +1,7 @@
 'use client';
 
 import { CrowdData } from '@/lib/types';
-import { DEFAULT_VENUE } from '@/lib/venue-schema';
+import { DEFAULT_VENUE } from '@/lib/data/venue-schema';
 
 interface CrowdHeatmapProps {
   crowdData: Map<string, CrowdData>;
@@ -91,7 +91,15 @@ export default function CrowdHeatmap({
             const isSmallZone = zoneWidth < 15 || zoneHeight < 12;
 
             return (
-              <g key={zone.id}>
+              <g 
+                key={zone.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`${zone.name}: ${Math.round(density)}% density, status ${getDensityLabel(density)}. ${isCurrentZone ? 'Current location.' : ''}`}
+                className="focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                onClick={() => onZoneSelect(zone.id)}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onZoneSelect(zone.id)}
+              >
                 {/* Zone rectangle */}
                 <rect
                   x={zone.x1}
@@ -104,7 +112,6 @@ export default function CrowdHeatmap({
                   strokeWidth={isCurrentZone ? 2.5 : isDanger ? 2 : 0.8}
                   rx="1"
                   className="cursor-pointer transition-all duration-300 hover:opacity-90"
-                  onClick={() => onZoneSelect(zone.id)}
                 />
 
                 {/* Single density value - positioned to avoid overlap */}

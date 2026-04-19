@@ -1,6 +1,6 @@
-import { CloudAIAnalysis, CloudAIZoneAnalysis } from './types';
-import { GoogleCloudLogging, LogSeverity } from './services/google-cloud-logging';
-import { CloudConfig } from './services/cloud-config';
+import { CloudAIAnalysis, CloudAIZoneAnalysis } from '../types';
+import { GoogleCloudLogging, LogSeverity } from './google-cloud-logging';
+import { CloudConfig } from './cloud-config';
 
 /**
  * Google Cloud Vision AI Integration (Simulated)

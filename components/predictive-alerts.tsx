@@ -82,7 +82,12 @@ export default function PredictiveAlerts({ predictions, currentZone }: Predictiv
           Upcoming Crowd Predictions
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent 
+        className="space-y-2" 
+        role="region" 
+        aria-label="Crowd Predictions"
+        aria-live="polite"
+      >
         {topAlerts.map((alert, index) => {
           const isCurrentZone = alert.zone === currentZone;
           const severityClass = getSeverityColor(alert.predictedDensity);
@@ -93,9 +98,11 @@ export default function PredictiveAlerts({ predictions, currentZone }: Predictiv
               className={`flex items-center justify-between p-2 rounded-lg border ${severityClass} ${
                 isCurrentZone ? 'ring-2 ring-primary ring-offset-1' : ''
               }`}
+              role="status"
+              aria-label={`Prediction for ${formatZoneName(alert.zone)}: Density expected to rise from ${Math.round(alert.currentDensity)}% to ${Math.round(alert.predictedDensity)}% in ${alert.timeToEvent} minutes.`}
             >
               <div className="flex items-center gap-2">
-                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
                 <div>
                   <p className="text-xs font-medium">
                     {formatZoneName(alert.zone)}

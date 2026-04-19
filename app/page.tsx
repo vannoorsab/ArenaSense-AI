@@ -22,8 +22,8 @@ import {
   Wifi,
 } from 'lucide-react';
 import LiveAlertBanner from '@/components/live-alert-banner';
-import { EVENTS, formatEventDate } from '@/lib/events-data';
-import { CSK_MATCHES, formatMatchDate, formatMatchTime } from '@/lib/csk-matches';
+import { EVENTS, formatEventDate } from '@/lib/data/events-data';
+import { CSK_MATCHES, formatMatchDate, formatMatchTime } from '@/lib/data/csk-matches';
 
 export default function Home() {
   const featuredEvents = EVENTS.slice(0, 3);

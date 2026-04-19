@@ -7,7 +7,7 @@
  *   - Vertex AI: https://us-central1-aiplatform.googleapis.com
  */
 
-import { CloudAIEngine } from '../cloud-ai-engine';
+import { CloudAIEngine } from './cloud-ai-engine';
 import { calcDensityLevel, calcFlowPrediction } from '../utils/crowd-math';
 
 // ─── Types ───────────────────────────────────────────────────────────────────

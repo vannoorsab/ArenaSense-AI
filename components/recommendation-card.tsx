@@ -44,16 +44,22 @@ export default function RecommendationCard({ recommendation }: RecommendationCar
   const styles = urgencyStyles[recommendation.urgency];
 
   return (
-    <Card className={`${styles.bg} border overflow-hidden`}>
+    <Card 
+      className={`${styles.bg} border overflow-hidden`}
+      role={recommendation.urgency === 'critical' ? 'alert' : 'status'}
+      aria-live="polite"
+    >
       <CardHeader className="pb-2 pt-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
-            <div className={`p-1.5 rounded-lg ${styles.badge}`}>
+            <div className={`p-1.5 rounded-lg ${styles.badge}`} aria-hidden="true">
               <TypeIcon className="w-4 h-4" />
             </div>
             <div>
               <p className={`text-[10px] font-medium ${styles.text}`}>{typeLabel}</p>
-              <CardTitle className="text-sm leading-tight">{recommendation.title}</CardTitle>
+              <CardTitle className="text-sm leading-tight" aria-label={`Recommendation: ${recommendation.title}`}>
+                {recommendation.title}
+              </CardTitle>
             </div>
           </div>
           <div className="flex items-center gap-1 text-[10px] font-semibold bg-white/70 px-2 py-1 rounded-full">
@@ -86,8 +92,9 @@ export default function RecommendationCard({ recommendation }: RecommendationCar
 
         <Button 
           size="sm" 
-          className="w-full h-8 text-xs gap-1"
+          className="w-full h-8 text-xs gap-1 focus-visible:ring-2 focus-visible:ring-offset-2 ring-primary"
           variant={recommendation.urgency === 'critical' ? 'destructive' : 'default'}
+          aria-label={`${recommendation.type === 'navigation' ? 'Navigate' : 'Action'} for ${recommendation.title}`}
         >
           {recommendation.type === 'navigation' ? 'Navigate' :
            recommendation.type === 'safety' ? 'Evacuate Now' :

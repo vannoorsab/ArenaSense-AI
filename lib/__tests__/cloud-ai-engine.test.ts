@@ -3,7 +3,7 @@
  * Jest tests for Google Cloud AI integration logic.
  */
 
-import { CloudAIEngine } from '../cloud-ai-engine';
+import { CloudAIEngine } from '../services/cloud-ai-engine';
 
 describe('CloudAIEngine', () => {
   test('performFullZoneAnalysis returns valid analysis object', async () => {

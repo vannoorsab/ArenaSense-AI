@@ -4,9 +4,9 @@
  * Abstracts gate management and stadium layout data.
  */
 
-import { GateManager } from '../gate-manager';
-import { CSK_MATCHES, type CSKMatch } from '../csk-matches';
-import { IPL_STADIUMS } from '../ipl-stadiums';
+import { GateService } from './gate-service';
+import { CSK_MATCHES, type CSKMatch } from '../data/csk-matches';
+import { IPL_STADIUMS } from '../data/ipl-stadiums';
 import { calcDensityLevel, type DensityResult } from '../utils/crowd-math';
 import { identifyOptimalEntryGate, type GateOption } from '../utils/route-optimizer';
 
@@ -29,7 +29,7 @@ export interface StadiumStatus {
   totalAttendees: number;
   overallDensity: DensityResult;
   sections: StadiumSection[];
-  gateStatuses: ReturnType<typeof GateManager.getGates>;
+  gateStatuses: GateData[];
   recommendedGate: string | null;
   timestamp: number;
 }
@@ -113,8 +113,8 @@ export function getMatchStadiumStatus(matchId: string, scenario = 'normal'): Sta
   const totalAttendees = sections.reduce((sum, s) => sum + s.currentCount, 0);
   const overallDensity = calcDensityLevel(totalAttendees, capacity);
 
-  // Get gate statuses from gate manager
-  const gateStatuses = GateManager.getGates(scenario as 'normal' | 'high' | 'peak' | 'emergency');
+  // Get gate statuses from gate service
+  const gateStatuses = GateService.getUpdatedGates(null, scenario);
 
   // Find best gate using route optimizer
   const gateOptions: GateOption[] = gateStatuses.map(g => ({
