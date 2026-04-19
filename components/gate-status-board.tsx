@@ -63,7 +63,6 @@ export default function GateStatusBoard({
   refreshMs = 5000,
 }: GateStatusBoardProps) {
   const [gates, setGates] = useState<GateData[]>([]);
-  const [recommended, setRecommended] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   useEffect(() => {
@@ -80,7 +79,7 @@ export default function GateStatusBoard({
     return () => clearInterval(interval);
   }, [scenario, gateType, refreshMs]);
 
-  const recommended = gates.find(g => !g.suggestion && g.status === 'low')?.name;
+  const recommendedGateName = gates.find(g => !g.suggestion && g.status === 'low')?.name;
 
   return (
     <div className="space-y-3" role="region" aria-label="Gate Status Board" aria-live="polite">
@@ -92,10 +91,10 @@ export default function GateStatusBoard({
             Live · Updated {lastUpdated.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </span>
         </div>
-        {recommended && (
+        {recommendedGateName && (
           <div className="flex items-center gap-1 text-xs bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 px-2 py-0.5 rounded-full border border-yellow-500/20">
             <Star className="w-3 h-3" aria-hidden="true" />
-            <span>Recommended: <strong>{recommended}</strong></span>
+            <span>Recommended: <strong>{recommendedGateName}</strong></span>
           </div>
         )}
       </div>
