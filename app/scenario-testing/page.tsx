@@ -54,23 +54,27 @@ export default function ScenarioTestingPage() {
 
     const stepInterval = Math.max(50, 500 / timeMultiplier);
 
-    const interval = setInterval(() => {
-      setCrowdState((prev) => {
-        if (!prev) return prev;
-
-        const next = CrowdService.processStep(prev, activeScenario);
+    const runStep = async () => {
+      try {
+        const next = await CrowdService.processStep(crowdState, activeScenario);
         setCurrentTime((t) => t + 1);
 
         // Calculate avg density for history
-        const avgDensity = Array.from(next.crowdData.values()).reduce((s, z) => s + z.density, 0) / next.crowdData.size;
+        const dataArray = Array.from(next.crowdData.values());
+        const avgDensity = dataArray.length > 0
+          ? dataArray.reduce((s, z) => s + z.density, 0) / dataArray.length
+          : 0;
+        
         setDensityHistory((hist) => [...hist.slice(-119), avgDensity]);
+        setCrowdState(next);
+      } catch (error) {
+        console.error("[ScenarioTesting] Step failed:", error);
+      }
+    };
 
-        return next;
-      });
-    }, stepInterval);
-
-    return () => clearInterval(interval);
-  }, [isRunning, activeScenario, timeMultiplier, crowdState === null]);
+    const interval = setTimeout(runStep, stepInterval);
+    return () => clearTimeout(interval);
+  }, [isRunning, crowdState, activeScenario, timeMultiplier]);
 
   if (!crowdState) return null;
 

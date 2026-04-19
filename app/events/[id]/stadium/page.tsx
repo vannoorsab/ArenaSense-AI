@@ -211,12 +211,18 @@ export default function EventStadiumPage({ params }: { params: Promise<{ id: str
   useEffect(() => {
     if (!crowdState || !isRunning) return;
 
-    const interval = setInterval(() => {
-      setCrowdState(prev => prev ? CrowdService.processStep(prev, prev.scenarioType) : prev);
-    }, 2000);
+    const runStep = async () => {
+      try {
+        const next = await CrowdService.processStep(crowdState, crowdState.scenarioType);
+        setCrowdState(next);
+      } catch (error) {
+        console.error("[StadiumPage] AI process failed:", error);
+      }
+    };
 
-    return () => clearInterval(interval);
-  }, [isRunning, crowdState === null]);
+    const interval = setTimeout(runStep, 2000);
+    return () => clearTimeout(interval);
+  }, [isRunning, crowdState]);
 
   const handleReset = useCallback(() => {
     if (event) {

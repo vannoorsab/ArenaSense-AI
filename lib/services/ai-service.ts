@@ -7,7 +7,7 @@
  *   - Vertex AI: https://us-central1-aiplatform.googleapis.com
  */
 
-import { CloudAIEngine } from './cloud-ai-engine';
+import { VisionService } from './vision-service';
 import { calcDensityLevel, calcFlowPrediction } from '../utils/crowd-math';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ export async function runAIAnalysis(
   const startTime = Date.now();
 
   // Get vision analysis from cloud AI engine simulation
-  const cloudAnalysis = await CloudAIEngine.performFullZoneAnalysis(scenario as any);
+  const cloudAnalysis = await VisionService.performFullZoneAnalysis(scenario as any);
 
   // Build vision analysis results per zone
   const visionAnalysis: VisionAnalysisResult[] = ANALYSIS_ZONES.map((zone, i) => {

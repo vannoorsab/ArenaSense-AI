@@ -1,6 +1,6 @@
 'use client';
 
-import { UserAccount, Ticket, SportEvent } from './types';
+import { UserAccount, Ticket, SportEvent } from '../types';
 
 // Simple client-side auth store using localStorage for persistence
 const STORAGE_KEY = 'stadium_auth';

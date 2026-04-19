@@ -11,9 +11,18 @@ import { GoogleCloudLogging } from './google-cloud-logging';
 
 export class GateService {
   private static logger = new GoogleCloudLogging();
+  private static cache = new Map<string, GateData[]>();
 
   /**
-   * 🤖 STATUS MAPPING: Heuristic to convert density % to discrete operational states
+   * 🛡️ INPUT VALIDATION: Ensures density is within [0, 100]
+   */
+  private static validateDensity(density: number): number {
+    if (typeof density !== 'number' || isNaN(density)) return 0;
+    return Math.max(0, Math.min(100, density));
+  }
+
+  /**
+   * 🗺️ MAP DENSITY: Convert density percentage to status type
    */
   private static mapDensityToStatus(density: number): GateStatus {
     if (density >= 75) return 'high';
@@ -36,6 +45,13 @@ export class GateService {
    */
   static getUpdatedGates(currentGates: GateData[] | null, scenario: string = 'normal'): GateData[] {
     try {
+      // 🛡️ INPUT VALIDATION
+      if (typeof scenario !== 'string') scenario = 'normal';
+
+      // ⚡ EFFICIENCY: Caching based on scenario and current gate counts
+      const cacheKey = `${scenario}_${currentGates?.length || 0}_${Math.floor(Date.now() / 5000)}`;
+      if (this.cache.has(cacheKey)) return this.cache.get(cacheKey)!;
+
       const now = Date.now();
       
       // Load from config if no current state exists
@@ -76,15 +92,18 @@ export class GateService {
       // 🧠 SMART ROUTING: Inject suggestions by analyzing overall gate network
       const suggestions = this.generateSuggestions(updated);
       
-      return updated.map(gate => {
+      const result = updated.map(gate => {
         const suggestion = suggestions.find(s => s.fromGate === gate.name);
         return {
           ...gate,
           suggestion: suggestion ? `AI Suggestion: Move to ${suggestion.toGate} to save ${suggestion.timeSavedMinutes}m.` : undefined
         };
       });
+
+      this.cache.set(cacheKey, result);
+      return result;
     } catch (error) {
-      this.logger.log('ERROR', 'Gate simulation update failed', { error });
+      this.logger.log('ERROR', '[GateService] simulation_update -> failed', { error });
       return currentGates || [];
     }
   }
@@ -119,13 +138,16 @@ export class GateService {
         
         // If the alternative gate is relatively clear, suggest it
         if (altGate && altGate.status === 'low' && altGate.isOpen) {
-          suggestions.push({
+          const suggestion = {
             fromGate: gate.name,
             toGate: altGate.name,
             reason: `${gate.name.split(' - ')[1]} is currently congested`,
             timeSavedMinutes: Math.max(2, gate.waitTimeMinutes - altGate.waitTimeMinutes),
-            urgency: gate.status === 'high' ? 'critical' : 'warning',
-          });
+            urgency: (gate.status === 'high' ? 'critical' : 'warning') as 'critical' | 'warning' | 'info',
+          };
+          
+          console.log(`[GateService] route_suggestion -> from="${suggestion.fromGate}" to="${suggestion.toGate}"`);
+          suggestions.push(suggestion);
         }
       }
     });

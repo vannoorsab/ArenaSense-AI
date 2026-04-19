@@ -112,3 +112,67 @@ export interface SystemMetrics {
   emergencyStatus: 'normal' | 'alert' | 'critical';
   lastUpdate: number;
 }
+
+// ─── Gate Types ───────────────────────────────────────────────────────────────
+
+export type GateStatus = 'low' | 'medium' | 'high' | 'closed';
+
+export interface GateData {
+  id: string;
+  name: string;
+  type: 'entry' | 'exit' | 'all';
+  sector: 'north' | 'south' | 'east' | 'west';
+  capacity: number;
+  currentCount: number;
+  density: number;
+  status: GateStatus;
+  trend: 'increasing' | 'decreasing' | 'stable';
+  waitTimeMinutes: number;
+  isOpen: boolean;
+  suggestion?: string;
+}
+
+export interface GateSuggestion {
+  fromGate: string;
+  toGate: string;
+  reason: string;
+  timeSavedMinutes: number;
+  urgency: 'critical' | 'warning' | 'info';
+}
+
+// ─── Alert & Broadcast Types ──────────────────────────────────────────────────
+
+export interface BroadcastAlert {
+  id: string;
+  message: string;
+  severity: 'info' | 'warning' | 'error' | 'success';
+  timestamp: number;
+  expiry?: number;
+  actionUrl?: string;
+  actionLabel?: string;
+}
+
+// ─── Cloud AI Analysis Types ──────────────────────────────────────────────────
+
+export interface CloudAIZoneAnalysis {
+  zoneId: string;
+  zoneName: string;
+  estimatedCount: number;
+  densityPercent: number;
+  confidence: number;
+  anomalyDetected: boolean;
+  anomalyType?: 'none' | 'overcrowding' | 'bottleneck' | 'rapid_movement';
+  description: string;
+  lastAnalyzed: number;
+}
+
+export interface CloudAIAnalysis {
+  sessionId: string;
+  modelVersion: string;
+  zones: CloudAIZoneAnalysis[];
+  overallRiskLevel: 'low' | 'medium' | 'high' | 'critical';
+  totalPeopleDetected: number;
+  processingTimeMs: number;
+  timestamp: number;
+  isFallbackMode?: boolean;
+}

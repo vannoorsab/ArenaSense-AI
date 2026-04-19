@@ -54,9 +54,9 @@ steps:
 
 # Substitution defaults
 substitutions:
-  _REGION: asia-south1
-  _REPO: areansense-ai
-  _SERVICE: areansense-ai
+  _REGION: us-central1
+  _REPO: arenasense-ai
+  _SERVICE: arenasense-ai
   _TAG: latest
 
 # Build options

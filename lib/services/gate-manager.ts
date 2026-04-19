@@ -1,4 +1,4 @@
-import { GateData, GateSuggestion, GateStatus } from './types';
+import { GateData, GateSuggestion, GateStatus } from '../types';
 export type { GateData, GateSuggestion, GateStatus };
 
 /**

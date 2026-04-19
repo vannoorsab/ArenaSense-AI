@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { CloudAIAnalysis, CloudAIZoneAnalysis } from '@/lib/types';
-import { CloudAIEngine } from '@/lib/services/cloud-ai-engine';
+import { VisionService } from '@/lib/services/vision-service';
 import { Badge } from '@/components/ui/badge';
 import { Brain, Wifi, AlertCircle, CheckCircle2, Loader2, TrendingUp } from 'lucide-react';
 
@@ -96,7 +96,7 @@ export default function AIVisionPanel({ scenario = 'normal', compact = false }: 
   const runAnalysis = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await CloudAIEngine.performFullZoneAnalysis(scenario);
+      const result = await VisionService.performFullZoneAnalysis(scenario);
       setAnalysis(result);
       setLastLatency(result.processingTimeMs);
       setCallCount(c => c + 1);
@@ -111,7 +111,7 @@ export default function AIVisionPanel({ scenario = 'normal', compact = false }: 
     return () => clearInterval(interval);
   }, [runAnalysis]);
 
-  const projectInfo = CloudAIEngine.getProjectInfo();
+  const projectInfo = VisionService.getProjectInfo();
   const risk = analysis?.overallRiskLevel ?? 'low';
   const cfg = RISK_CONFIG[risk];
 

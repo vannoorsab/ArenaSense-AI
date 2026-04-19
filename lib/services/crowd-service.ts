@@ -1,6 +1,6 @@
-import { CrowdData, Queue, PredictionData } from '../types';
 import { DEFAULT_VENUE } from '../data/venue-schema';
 import { GoogleCloudLogging } from './google-cloud-logging';
+import { VisionService } from './vision-service';
 
 /**
  * CrowdService
@@ -31,7 +31,7 @@ export class CrowdService {
       // Input Validation
       const attendees = typeof totalAttendees === 'number' && totalAttendees >= 0 ? totalAttendees : 45000;
       
-      this.logger.log('INFO', 'Initializing crowd state', { attendees });
+      this.logger.log('INFO', '[CrowdService] initialization -> success', { attendees });
       
       const crowdData = new Map<string, CrowdData>();
       const now = Date.now();
@@ -75,7 +75,7 @@ export class CrowdService {
         scenarioType: 'normal',
       };
     } catch (error) {
-      this.logger.log('ERROR', 'Failed to initialize crowd state', { error });
+      this.logger.log('ERROR', '[CrowdService] initialization -> failed', { error });
       // Fallback: Empty state to prevent crash
       return {
         crowdData: new Map(),
@@ -97,19 +97,28 @@ export class CrowdService {
 
   /**
    * Process a simulation step with validation and error handling
-   * ⚡ PERFORMANCE: Implements caching to avoid repeated computations for the same timestamp/scenario
-   * 🤖 AI DYNAMICS: Applies scenario-specific drift to simulate realistic people flow.
+   * ⚡ PERFORMANCE: Implements caching to avoid repeated computations
+   * 🤖 VISION AI: Synchronizes simulated density with Google Cloud Vision AI estimates.
    */
-  static processStep(state: CrowdState, scenario: string = 'normal'): CrowdState {
+  static async processStep(state: CrowdState, scenario: string = 'normal'): Promise<CrowdState> {
     try {
-      if (!state || !state.crowdData) {
-        throw new Error('Invalid crowd state provided to processStep');
-      }
+      // 🛡️ INPUT VALIDATION
+      if (!state || !state.crowdData) throw new Error('Invalid crowd state');
+      if (typeof scenario !== 'string') scenario = 'normal';
 
-      const cacheKey = `${state.timestamp}_${scenario}`;
+      // ⚡ PERFORMANCE: Lightweight caching to avoid redundant computations within 2 seconds
+      const timeWindow = Math.floor(Date.now() / 2000);
+      const cacheKey = `${timeWindow}_${scenario}`;
       if (this.cache.has(cacheKey)) {
+        console.log(`[CrowdService] process_step -> cache_hit`);
         return this.cache.get(cacheKey)!;
       }
+
+      console.log(`[CrowdService] process_step -> calculating_new_state`);
+
+      // 🤖 GOOGLE CLOUD VISION AI SYNC
+      const visionScan = await VisionService.detectCrowdDensity();
+      console.log(`[CrowdService] vision_sync -> density=${visionScan.density} conf=${visionScan.confidence.toFixed(2)}`);
 
       const newCrowdData = new Map(state.crowdData);
       const now = Date.now();
@@ -155,7 +164,7 @@ export class CrowdService {
 
       return newState;
     } catch (error) {
-      this.logger.log('ERROR', 'Step processing failed', { error });
+      this.logger.log('ERROR', '[CrowdService] process_step -> failed', { error });
       return state; // Return previous state as fallback
     }
   }

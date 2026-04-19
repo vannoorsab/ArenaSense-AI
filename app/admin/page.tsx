@@ -74,30 +74,35 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!crowdState || !isRunning) return;
 
-    const interval = setInterval(() => {
-      setCrowdState((prev) => {
-        if (!prev) return prev;
-        const next = CrowdService.processStep(prev, scenario);
+    const runStep = async () => {
+      try {
+        const next = await CrowdService.processStep(crowdState, scenario);
         
         // Compute metrics
-        const totalPeople = Array.from(next.crowdData.values()).reduce((s, z) => s + z.currentCount, 0);
-        const avgDensity = Array.from(next.crowdData.values()).reduce((s, z) => s + z.density, 0) / next.crowdData.size;
+        const dataArray = Array.from(next.crowdData.values());
+        const totalPeople = dataArray.reduce((s, z) => s + z.currentCount, 0);
+        const avgDensity = dataArray.length > 0 
+          ? dataArray.reduce((s, z) => s + z.density, 0) / dataArray.length 
+          : 0;
         
         setSystemMetrics({
           totalAttendees: totalPeople,
           averageDensity: avgDensity,
-          criticalZones: [],
+          criticalZones: dataArray.filter(z => z.density > 80).map(z => z.zone),
           activePredictions: next.predictions.length,
           emergencyStatus: emergencyActive ? 'critical' : 'normal',
           lastUpdate: Date.now(),
         });
 
-        return next;
-      });
-    }, 2000);
+        setCrowdState(next);
+      } catch (error) {
+        console.error("[AdminDashboard] Simulation step failed:", error);
+      }
+    };
 
-    return () => clearInterval(interval);
-  }, [isRunning, scenario, crowdState === null, emergencyActive]);
+    const interval = setTimeout(runStep, 2000);
+    return () => clearTimeout(interval);
+  }, [isRunning, scenario, crowdState, emergencyActive]);
 
   const handleBroadcast = () => {
     if (broadcastMessage.trim()) {

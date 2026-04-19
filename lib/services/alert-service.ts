@@ -14,6 +14,7 @@ const DEFAULT_EXPIRY_MS = 45_000;
 
 export class AlertService {
   private static logger = new GoogleCloudLogging();
+  private static _memoryAlerts: BroadcastAlert[] = [];
 
   /**
    * Broadcast a new alert
@@ -45,6 +46,7 @@ export class AlertService {
       const existing = this.getActiveAlerts();
       // Keep only recent alerts, newest first
       const updated = [alert, ...existing].slice(0, MAX_ALERTS);
+      this._memoryAlerts = updated;
       
       // ⚡ Persistence Logic for Client-Side Sync
       if (typeof window !== 'undefined') {
@@ -57,7 +59,8 @@ export class AlertService {
         }));
       }
 
-      this.logger.log('INFO', 'System alert broadcasted', { 
+      console.log(`[AlertService] broadcast -> zone=${options?.gateAffected || 'global'} id=${alert.id}`);
+      this.logger.log('INFO', '[AlertService] broadcast -> active', { 
         id: alert.id, 
         type: alert.type,
         message: alert.message.slice(0, 30) + '...'
@@ -65,7 +68,7 @@ export class AlertService {
 
       return alert;
     } catch (error) {
-      this.logger.log('ERROR', 'Failed to broadcast alert', { error });
+      this.logger.log('ERROR', '[AlertService] broadcast -> failed', { error });
       // Return a safe dummy object if broadcast fails
       return {
         id: 'error-placeholder',
@@ -84,18 +87,20 @@ export class AlertService {
    */
   static getActiveAlerts(): BroadcastAlert[] {
     try {
-      if (typeof window === 'undefined') return [];
+      const now = Date.now();
+      if (typeof window === 'undefined') {
+        return this._memoryAlerts.filter(a => a.expiresAt > now);
+      }
       
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
       
       const parsed: BroadcastAlert[] = JSON.parse(raw);
-      const now = Date.now();
       
       // Filter out stale alerts
       return Array.isArray(parsed) ? parsed.filter(a => a.expiresAt > now) : [];
     } catch (error) {
-      this.logger.log('WARNING', 'Failed to parse active alerts', { error });
+      this.logger.log('WARNING', '[AlertService] fetch_active -> failed_parse', { error });
       return [];
     }
   }
@@ -135,7 +140,7 @@ export class AlertService {
 
       return null;
     } catch (error) {
-      this.logger.log('ERROR', 'AI Alert Trigger failed', { error });
+      this.logger.log('ERROR', '[AlertService] ai_trigger -> failed', { error });
       return null;
     }
   }
@@ -148,6 +153,7 @@ export class AlertService {
       if (!alertId) return;
       
       const existing = this.getActiveAlerts().filter(a => a.id !== alertId);
+      this._memoryAlerts = existing;
       
       if (typeof window !== 'undefined') {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
@@ -157,7 +163,7 @@ export class AlertService {
         }));
       }
     } catch (error) {
-      this.logger.log('ERROR', 'Alert dismissal failed', { alertId, error });
+      this.logger.log('ERROR', '[AlertService] dismiss -> failed', { alertId, error });
     }
   }
 

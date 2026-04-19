@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, XCircle, Play, Shield, Brain, Activity } from 'lucide-react';
 import { AlertService } from '@/lib/services/alert-service';
-import { CloudAIEngine } from '@/lib/services/cloud-ai-engine';
+import { VisionService } from '@/lib/services/vision-service';
 import { CrowdService } from '@/lib/services/crowd-service';
 import { ResilienceService } from '@/lib/services/resilience-service';
 
@@ -33,7 +33,7 @@ export default function TestDashboard() {
 
     // Test 2: Cloud AI
     try {
-      const info = CloudAIEngine.getProjectInfo();
+      const info = VisionService.getProjectInfo();
       const pass = info.project && info.model;
       updateResult(1, pass ? 'PASS' : 'FAIL', pass ? `Connected to ${info.project} using model ${info.model}.` : 'Missing project metadata.');
     } catch (e: any) {
