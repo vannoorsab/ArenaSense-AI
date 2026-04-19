@@ -22,7 +22,7 @@ import LiveAlertBanner from '@/components/live-alert-banner';
 import AccessibilityToolbar from '@/components/accessibility-toolbar';
 import GateStatusBoard from '@/components/gate-status-board';
 import CrowdPredictionCard from '@/components/crowd-prediction-card';
-import { getCSKMatchById, formatMatchDate, formatMatchTime } from '@/lib/csk-matches';
+import { getCSKMatchById, formatMatchDate, formatMatchTime } from '@/lib/data/csk-matches';
 import { getMatchStadiumStatus, type StadiumStatus } from '@/lib/services/stadium-service';
 import { runAIAnalysis, getAISummary, type AIServiceResult } from '@/lib/services/ai-service';
 
