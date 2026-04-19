@@ -29,8 +29,8 @@ import {
   Trophy,
   Timer,
 } from 'lucide-react';
-import { EVENTS, formatEventDate, formatEventTime, getLiveEvents } from '@/lib/events-data';
-import { getAuthState, logoutUser } from '@/lib/auth-store';
+import { EVENTS, formatEventDate, formatEventTime, getLiveEvents } from '@/lib/data/events-data';
+import { getAuthState, logoutUser } from '@/lib/services/auth-service';
 import { SportEvent } from '@/lib/types';
 
 const sportConfig: Record<SportEvent['sport'], { icon: React.ReactNode; color: string; bg: string; gradient: string }> = {

@@ -10,7 +10,7 @@ export interface CachedData {
   timestamp: number;
 }
 
-export class ResilienceSystem {
+export class ResilienceService {
   private static cacheKey = 'stadium-resilience-cache';
   private static networkStatusKey = 'stadium-network-status';
 

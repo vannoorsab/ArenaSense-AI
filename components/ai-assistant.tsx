@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Mic, Send, Volume2, Loader, Navigation, ShieldAlert, MapPin, Utensils, DoorOpen, Sparkles } from 'lucide-react';
-import { ResilienceSystem } from '@/lib/resilience-system';
+import { ResilienceService } from '@/lib/services/resilience-service';
 import { AIResponseService } from '@/lib/services/ai-response-service';
 import { InputValidator } from '@/lib/services/input-validator';
 import { formatZoneName } from '@/lib/utils/zone-formatter';
@@ -65,7 +65,7 @@ export default function AIAssistant({
       }
     }
 
-    const cleanup = ResilienceSystem.setupNetworkListener((status) => {
+    const cleanup = ResilienceService.setupNetworkListener((status) => {
       setNetworkStatus(status);
     });
 

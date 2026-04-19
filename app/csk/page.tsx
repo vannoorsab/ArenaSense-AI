@@ -19,8 +19,8 @@ import {
   Home,
   Plane,
 } from 'lucide-react';
-import { CSK_MATCHES, formatMatchDate, formatMatchTime, CSK_COLORS, type CSKMatch } from '@/lib/csk-matches';
-import { getAuthState, logoutUser } from '@/lib/auth-store';
+import { CSK_MATCHES, formatMatchDate, formatMatchTime, CSK_COLORS, type CSKMatch } from '@/lib/data/csk-matches';
+import { getAuthState, logoutUser } from '@/lib/services/auth-service';
 
 export default function CSKMatchesPage() {
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);

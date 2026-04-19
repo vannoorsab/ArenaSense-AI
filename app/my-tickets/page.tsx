@@ -15,8 +15,8 @@ import {
   DoorOpen,
   ChevronRight,
 } from 'lucide-react';
-import { getUserTickets, getAuthState } from '@/lib/auth-store';
-import { getEventById, formatEventDate, formatEventTime } from '@/lib/events-data';
+import { getUserTickets, getAuthState } from '@/lib/services/auth-service';
+import { getEventById, formatEventDate, formatEventTime } from '@/lib/data/events-data';
 import { Ticket as TicketType, SportEvent } from '@/lib/types';
 
 interface TicketWithEvent extends TicketType {

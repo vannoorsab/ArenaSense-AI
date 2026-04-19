@@ -18,8 +18,8 @@ import {
   Clock,
   AlertTriangle,
 } from 'lucide-react';
-import { getTicketById, validateTicket, getAuthState } from '@/lib/auth-store';
-import { getEventById, formatEventTime } from '@/lib/events-data';
+import { getTicketById, validateTicket, getAuthState } from '@/lib/services/auth-service';
+import { getEventById, formatEventTime } from '@/lib/data/events-data';
 import { Ticket, SportEvent } from '@/lib/types';
 import QRCode from '@/components/qr-code';
 

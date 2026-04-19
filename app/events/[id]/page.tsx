@@ -22,8 +22,8 @@ import {
   DoorOpen,
   AlertCircle,
 } from 'lucide-react';
-import { getEventById, formatEventDate, formatEventTime } from '@/lib/events-data';
-import { getAuthState, registerForEvent } from '@/lib/auth-store';
+import { getEventById, formatEventDate, formatEventTime } from '@/lib/data/events-data';
+import { getAuthState, registerForEvent } from '@/lib/services/auth-service';
 import { SportEvent } from '@/lib/types';
 
 export default function EventDetailsPage({ params }: { params: Promise<{ id: string }> }) {

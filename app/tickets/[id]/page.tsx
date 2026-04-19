@@ -19,8 +19,8 @@ import {
   QrCode,
   Ticket,
 } from 'lucide-react';
-import { getTicketById, getAuthState } from '@/lib/auth-store';
-import { getEventById, formatEventDate, formatEventTime } from '@/lib/events-data';
+import { getTicketById, getAuthState } from '@/lib/services/auth-service';
+import { getEventById, formatEventDate, formatEventTime } from '@/lib/data/events-data';
 import { Ticket as TicketType, SportEvent } from '@/lib/types';
 import QRCode from '@/components/qr-code';
 

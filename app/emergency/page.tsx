@@ -3,16 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Navigation, MapPin, Clock, Users, AlertCircle } from 'lucide-react';
-import EvacuationMap from '@/components/evacuation-map';
-import EmergencyStats from '@/components/emergency-stats';
-import { CrowdSimulator, SimulationState } from '@/lib/crowd-simulator';
-import { AIDecisionEngine } from '@/lib/ai-engine';
-import { EmergencySystem } from '@/lib/emergency-system';
+import { AlertTriangle, Navigation, Clock, Users, AlertCircle } from 'lucide-react';
+import { CrowdService, type CrowdState } from '@/lib/services/crowd-service';
+import { EmergencyService } from '@/lib/services/emergency-service';
+import { AlertService } from '@/lib/services/alert-service';
 import { EvacuationRoute, AnomalyAlert } from '@/lib/types';
 
 export default function EmergencyPage() {
-  const [simState, setSimState] = useState<SimulationState | null>(null);
+  const [crowdState, setCrowdState] = useState<CrowdState | null>(null);
   const [alerts, setAlerts] = useState<AnomalyAlert[]>([]);
   const [evacuationRoutes, setEvacuationRoutes] = useState<EvacuationRoute[]>([]);
   const [panicDetected, setPanicDetected] = useState(false);
@@ -21,95 +19,57 @@ export default function EmergencyPage() {
 
   // Initialize simulation with emergency scenario
   useEffect(() => {
-    const initial = CrowdSimulator.initializeSimulation(60000); // Higher attendance for demo
-    setSimState(initial);
+    const initial = CrowdService.initialize(60000); 
+    setCrowdState(initial);
   }, []);
 
   // Main simulation loop
   useEffect(() => {
-    if (!simState || !isRunning) return;
+    if (!crowdState || !isRunning) return;
 
     const interval = setInterval(() => {
-      setSimState((prev) => {
+      setCrowdState((prev) => {
         if (!prev) return prev;
 
-        // Run simulation with aggressive entry_rush to trigger alerts
-        const newState = CrowdSimulator.step(prev, 'entry_rush');
-        const newAlerts = AIDecisionEngine.detectAnomalies(newState.crowdData, newState.predictions);
-
-        // Check for panic
-        const isPanic = EmergencySystem.detectPanicMovement(newAlerts, newState.crowdData);
-        setPanicDetected(isPanic);
-
-        // Generate evacuation routes
-        const routes = EmergencySystem.generateEvacuationRoutes(
+        const next = CrowdService.processStep(prev, 'entry_rush');
+        const nextAlerts = AlertService.triggerAiAlert(next.crowdData, next.predictions);
+        
+        // Safety protocol
+        const panic = EmergencyService.detectPanicMovement(nextAlerts, next.crowdData);
+        const routes = EmergencyService.generateEvacuationRoutes(
           'seating-lower-north',
-          newState.crowdData,
-          isPanic ? 'safety_first' : 'balanced'
+          next.crowdData,
+          panic ? 'safety_first' : 'balanced'
         );
-        setEvacuationRoutes(routes);
-        setAlerts(newAlerts);
 
-        return newState;
+        setPanicDetected(panic);
+        setEvacuationRoutes(routes);
+        setAlerts(nextAlerts);
+
+        return next;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning, simState]);
+  }, [isRunning, crowdState === null]);
 
-  if (!simState) {
-    return <div className="flex items-center justify-center h-screen">Loading Emergency System...</div>;
-  }
+  if (!crowdState) return null;
 
   const criticalAlerts = alerts.filter((a) => a.severity === 'critical');
   const bestRoute = evacuationRoutes[0];
-  const totalAffected = Array.from(simState.crowdData.values()).reduce((sum, c) => sum + c.currentCount, 0);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Emergency Banner */}
-      <header className={`border-b sticky top-0 z-40 ${
-        panicDetected
-          ? 'bg-red-600 border-red-700'
-          : criticalAlerts.length > 0
-            ? 'bg-orange-600 border-orange-700'
-            : 'bg-card border-border'
+      <header className={`border-b sticky top-0 z-40 transition-colors ${
+        panicDetected ? 'bg-red-600 border-red-700 text-white' : 'bg-card border-border'
       }`}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className={panicDetected || criticalAlerts.length > 0 ? 'text-white' : ''}>
+            <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                {panicDetected ? (
-                  <>
-                    <AlertTriangle className="w-6 h-6 animate-pulse" />
-                    EMERGENCY EVACUATION PROTOCOL
-                  </>
-                ) : criticalAlerts.length > 0 ? (
-                  <>
-                    <AlertCircle className="w-6 h-6" />
-                    CRITICAL ALERTS ACTIVE
-                  </>
-                ) : (
-                  <>
-                    <Navigation className="w-6 h-6" />
-                    Emergency Response System
-                  </>
-                )}
+                {panicDetected ? <AlertTriangle className="w-6 h-6 animate-pulse" /> : <Navigation className="w-6 h-6" />}
+                {panicDetected ? 'EMERGENCY PROTOCOL ACTIVE' : 'Emergency Response System'}
               </h1>
-              <p className={`text-sm mt-1 ${panicDetected || criticalAlerts.length > 0 ? 'text-white/90' : 'text-muted-foreground'}`}>
-                Real-time evacuation assistance and emergency guidance
-              </p>
-            </div>
-
-            <div className={`text-right px-4 py-2 rounded ${
-              panicDetected
-                ? 'bg-red-700 text-white'
-                : criticalAlerts.length > 0
-                  ? 'bg-orange-700 text-white'
-                  : 'bg-muted text-foreground'
-            }`}>
-              <div className="font-bold">{totalAffected.toLocaleString()} People</div>
-              <div className="text-xs">{criticalAlerts.length} Alert{criticalAlerts.length !== 1 ? 's' : ''}</div>
             </div>
           </div>
         </div>
@@ -117,140 +77,102 @@ export default function EmergencyPage() {
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Evacuation Map */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Evacuation Route Map</CardTitle>
-                <CardDescription>
-                  {panicDetected ? 'Safety-optimized routes' : 'Optimal evacuation paths'}
-                </CardDescription>
+                <CardTitle>Recommended Route</CardTitle>
+                <CardDescription>AI-generated safety paths</CardDescription>
               </CardHeader>
               <CardContent>
-                <EvacuationMap
-                  routes={evacuationRoutes}
-                  crowdData={simState.crowdData}
-                  selectedRouteId={selectedRoute}
-                  onSelectRoute={setSelectedRoute}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Critical Alerts */}
-            {criticalAlerts.length > 0 && (
-              <Card className="mt-6 border-destructive">
-                <CardHeader>
-                  <CardTitle className="text-destructive">Critical Alerts ({criticalAlerts.length})</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {criticalAlerts.slice(0, 5).map((alert) => (
-                    <div key={alert.id} className="p-3 bg-red-50 rounded border border-red-200">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
-                        <div className="flex-1 text-sm">
-                          <p className="font-bold">{alert.message}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {alert.zone} • {alert.affectedPeople.toLocaleString()} people
-                          </p>
+                <div className="space-y-4">
+                  {bestRoute ? (
+                    <div className="p-6 bg-muted rounded-xl border-2 border-primary/20">
+                      <div className="flex justify-between items-start mb-6">
+                        <div>
+                          <h2 className="text-2xl font-black text-primary uppercase tracking-tight">{bestRoute.name}</h2>
+                          <p className="text-muted-foreground">Safety Score: {bestRoute.safetyScore.toFixed(0)}/100</p>
+                        </div>
+                        <Badge variant="outline" className="px-3 py-1">Optimal Path</Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-background rounded-lg shadow-sm">
+                          <Clock className="w-5 h-5 text-primary mb-2" />
+                          <p className="text-xs text-muted-foreground">Est. Time</p>
+                          <p className="font-bold text-lg">{bestRoute.estimatedTime.toFixed(0)} min</p>
+                        </div>
+                        <div className="p-4 bg-background rounded-lg shadow-sm">
+                          <Users className="w-5 h-5 text-secondary mb-2" />
+                          <p className="text-xs text-muted-foreground">Current Crowding</p>
+                          <p className="font-bold text-lg">{bestRoute.currentCrowding}</p>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                  ) : (
+                    <p className="text-muted-foreground">Calculating routes...</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Right Sidebar - Route Selection */}
-          <div className="space-y-6">
-            {/* Recommended Route */}
-            {bestRoute && (
-              <Card className={bestRoute.safetyScore > 70 ? 'border-green-200' : 'border-orange-200'}>
-                <CardHeader>
-                  <CardTitle className="text-base">Recommended Route</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="font-bold text-lg">{bestRoute.name}</p>
-                    <p className="text-sm text-muted-foreground mt-1">Safety Score: {bestRoute.safetyScore.toFixed(0)}/100</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted p-3 rounded">
-                      <Clock className="w-4 h-4 text-primary mb-1" />
-                      <p className="text-xs text-muted-foreground">Estimated Time</p>
-                      <p className="font-bold text-sm">{bestRoute.estimatedTime.toFixed(0)} min</p>
-                    </div>
-                    <div className="bg-muted p-3 rounded">
-                      <Users className="w-4 h-4 text-secondary mb-1" />
-                      <p className="text-xs text-muted-foreground">Current Crowding</p>
-                      <p className="font-bold text-sm">{bestRoute.currentCrowding}</p>
-                    </div>
-                  </div>
-
-                  <Button className="w-full" size="lg">
-                    <Navigation className="w-4 h-4 mr-2" />
-                    Follow This Route
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* All Routes */}
-            <Card>
+            <Card className="border-destructive/20 bg-destructive/5">
               <CardHeader>
-                <CardTitle className="text-base">All Available Routes</CardTitle>
+                <CardTitle className="text-destructive flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  Live Critical Alerts
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {evacuationRoutes.map((route) => (
-                  <Button
-                    key={route.id}
-                    onClick={() => setSelectedRoute(route.id)}
-                    variant={selectedRoute === route.id ? 'default' : 'outline'}
-                    className="w-full justify-start text-xs h-auto py-2"
-                  >
-                    <div className="text-left">
-                      <div className="font-semibold">{route.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Safety: {route.safetyScore.toFixed(0)}% • {route.estimatedTime.toFixed(0)} min
+              <CardContent className="space-y-3">
+                {criticalAlerts.length > 0 ? (
+                  criticalAlerts.map(alert => (
+                    <div key={alert.id} className="p-4 bg-white rounded-lg border border-destructive/20 shadow-sm flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-destructive mt-1 flex-shrink-0" />
+                      <div>
+                        <p className="font-bold text-foreground">{alert.message}</p>
+                        <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">{alert.zone}</p>
                       </div>
                     </div>
-                  </Button>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No critical alerts currently active.</p>
+                )}
               </CardContent>
             </Card>
+          </div>
 
-            {/* Emergency Stats */}
+          <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Emergency Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <EmergencyStats alerts={alerts} crowdData={simState.crowdData} />
-              </CardContent>
-            </Card>
-
-            {/* Demo Controls */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Demo Controls</CardTitle>
+                <CardTitle className="text-base">All Exit Options</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button
-                  onClick={() => setIsRunning(!isRunning)}
-                  variant={isRunning ? 'default' : 'outline'}
-                  className="w-full text-sm"
-                >
-                  {isRunning ? 'Pause' : 'Resume'} Simulation
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Showing entry rush scenario with {evacuationRoutes.length} available exits
-                </p>
+                {evacuationRoutes.map(route => (
+                  <Button
+                    key={route.id}
+                    variant={selectedRoute === route.id ? 'default' : 'outline'}
+                    className="w-full justify-between h-auto py-3 px-4"
+                    onClick={() => setSelectedRoute(route.id)}
+                  >
+                    <div className="text-left">
+                      <p className="font-bold text-sm">{route.name}</p>
+                      <p className="text-[10px] opacity-70">Safety: {route.safetyScore.toFixed(0)}%</p>
+                    </div>
+                    <span className="text-xs font-mono">{route.estimatedTime.toFixed(0)}m</span>
+                  </Button>
+                ))}
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function Badge({ children, variant, className }: { children: React.ReactNode, variant: 'outline' | 'default', className?: string }) {
+  return (
+    <span className={`px-2 py-1 rounded text-[10px] font-bold ${variant === 'outline' ? 'border border-current' : 'bg-primary text-white'} ${className}`}>
+      {children}
+    </span>
   );
 }

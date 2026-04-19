@@ -20,8 +20,8 @@ import {
   MessageSquare,
   Volume2,
 } from 'lucide-react';
-import { getEventById, formatEventTime } from '@/lib/events-data';
-import { getAuthState } from '@/lib/auth-store';
+import { getEventById, formatEventTime } from '@/lib/data/events-data';
+import { getAuthState } from '@/lib/services/auth-service';
 import { SportEvent } from '@/lib/types';
 import AttendeeInterface from '@/components/attendee-interface';
 

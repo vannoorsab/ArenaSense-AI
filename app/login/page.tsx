@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { AlertCircle, ArrowLeft, Shield, Zap, Users } from 'lucide-react';
-import { loginUser } from '@/lib/auth-store';
+import { loginUser } from '@/lib/services/auth-service';
 
 export default function LoginPage() {
   const router = useRouter();
